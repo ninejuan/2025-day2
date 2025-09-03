@@ -1,0 +1,15 @@
+# AWS 리전
+aws_region = "ap-northeast-2"
+
+# VPC 설정
+vpc_cidr = "10.0.0.0/16"
+public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24"]
+availability_zones = ["ap-northeast-2a", "ap-northeast-2c"]
+
+# 인스턴스 타입
+instance_type = "t3.medium"
+eks_node_instance_type = "t3.medium"
+
+# 키페어 이름
+key_name = "gac-key"
