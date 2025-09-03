@@ -76,13 +76,15 @@ terraform apply
 
 ### 4. ArgoCD 접속
 ```bash
+# Change password
+# argocd가 준비된 후, 아래 명령어를 통해 argocd 비밀번호를 변경합니다.
+
+#kubectl exec -it -n argocd deployment/argocd-server -- /bin/bash
+#argocd login localhost:8080
+#argocd account update-password
+
 # 포트 포워딩
 kubectl port-forward svc/argocd-server -n argocd 8080:443
-
-# 브라우저에서 접속
-# http://localhost:8080
-# 사용자: admin
-# 비밀번호: admin
 ```
 
 ### 5. Github Setting
@@ -97,4 +99,10 @@ gh auth login
 AWS_ACCESS_KEY_ID= # AWS Access key
 AWS_SECRET_ACCESS_KEY= # AWS Secret key
 GAC_GITOPS_TOKEN= # Github Access Token
+```
+
+### 6. App Deployment
+```sh
+# app-files/gac-gitops/gac-argocd-app.yaml 파일을 apply합니다.
+kubectl apply -f app-files/gac-gitops/gac-argocd-app.yaml
 ```

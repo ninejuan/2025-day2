@@ -45,3 +45,4 @@ terraform.rc
 Thumbs.db 
 
 .env
+*venv*
