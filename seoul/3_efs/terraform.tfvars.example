@@ -1,0 +1,8 @@
+# 학생 번호 (선수 등번호) - 실제 값으로 변경하세요
+student_number = "12345"
+
+# AWS 리전
+aws_region = "eu-west-1"
+
+# 환경 이름
+environment = "efs"
