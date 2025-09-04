@@ -1,0 +1,6 @@
+# AWS Configuration
+aws_region = "us-west-1"
+
+# Project Configuration
+project_name = "waf-xxe"
+environment  = "production"
