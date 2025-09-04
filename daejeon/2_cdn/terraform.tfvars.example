@@ -1,0 +1,23 @@
+# 프로젝트 설정
+project_name = "web-cdn"
+environment  = "production"
+region       = "us-east-1"
+
+# VPC 설정
+vpc_cidr = "10.0.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b"]
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+# private_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24"]  # Edge DRM에서 불필요
+
+# Bastion Host 설정
+bastion_instance_type = "t3.micro"
+key_pair_name = "your-existing-key-pair-name"  # 기존에 생성된 키 페어 이름
+
+# DRM 설정
+drm_token = "drm-cloud"
+
+# 샘플 비디오 파일들 (app-files 디렉토리에 있는 파일들)
+sample_videos = {
+  "sample.mp4" = "./app-files/sample.mp4"
+  "demo.mp4"   = "./app-files/demo.mp4"
+}
