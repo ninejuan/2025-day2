@@ -1,0 +1,7 @@
+aws_region = "ap-northeast-2"
+vpc_cidr = "10.0.0.0/16"
+availability_zones = ["ap-northeast-2a", "ap-northeast-2c"]
+table_name = "account-table"
+lambda_function_name = "account-conflict-resolver"
+ec2_instance_name = "account-app-ec2"
+ec2_instance_type = "t3.micro"
