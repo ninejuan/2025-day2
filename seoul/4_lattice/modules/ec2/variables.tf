@@ -42,6 +42,12 @@ variable "user_data_vars" {
   default     = {}
 }
 
+variable "lattice_service_url" {
+  description = "VPC Lattice 서비스 URL"
+  type        = string
+  default     = ""
+}
+
 variable "instance_name" {
   description = "인스턴스 이름"
   type        = string

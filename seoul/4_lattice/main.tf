@@ -283,6 +283,9 @@ module "service_a" {
   user_data_template = "${path.module}/modules/ec2/userdata/service-a-user-data.sh"
   instance_name = "service-a-ec2"
   create_eip = false
+  lattice_service_url = module.lattice.service_dns_name
+  
+  depends_on = [module.lattice]
   
   tags = {
     Name = "service-a-ec2"

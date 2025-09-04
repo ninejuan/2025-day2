@@ -22,3 +22,8 @@ output "service_name" {
   description = "VPC Lattice 서비스 이름"
   value       = aws_vpclattice_service.main.name
 }
+
+output "service_dns_name" {
+  description = "VPC Lattice 서비스 DNS 이름"
+  value       = aws_vpclattice_service.main.dns_entry[0].domain_name
+}

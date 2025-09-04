@@ -2,7 +2,7 @@
 yum update -y
 yum install -y python3 python3-pip git
 
-pip3 install flask requests
+pip3 install flask requests==2.28.2
 
 mkdir -p /opt/service-a
 cd /opt/service-a
@@ -34,7 +34,7 @@ EOF
 cat > /opt/service-a/start-service.sh << 'EOF'
 #!/bin/bash
 cd /opt/service-a
-export LATTICE_SERVICE_B_URL="http://service-b-lattice.lattice-net/api"
+export LATTICE_SERVICE_B_URL="http://${lattice_service_url}/api"
 python3 service-a.py
 EOF
 

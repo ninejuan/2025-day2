@@ -6,7 +6,9 @@ resource "aws_instance" "instance" {
   vpc_security_group_ids = var.security_group_ids
   iam_instance_profile   = var.iam_instance_profile_name
 
-  user_data = base64encode(templatefile(var.user_data_template, var.user_data_vars))
+  user_data = base64encode(templatefile(var.user_data_template, merge(var.user_data_vars, {
+    lattice_service_url = var.lattice_service_url
+  })))
 
   tags = merge(var.tags, {
     Name = var.instance_name
