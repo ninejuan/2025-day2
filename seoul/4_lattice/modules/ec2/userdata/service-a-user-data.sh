@@ -16,10 +16,6 @@ app = Flask(__name__)
 LATTICE_SERVICE_B_URL = os.environ.get('LATTICE_SERVICE_B_URL', 'http://localhost/api')
 
 @app.route("/hello")
-def hello():
-    return jsonify({"message": "Hello from Service A"})
-
-@app.route("/call-service-b")
 def call_service_b():
     try:
         res = requests.get(LATTICE_SERVICE_B_URL, timeout=2)

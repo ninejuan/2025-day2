@@ -56,6 +56,16 @@ variable "vpc_b_id" {
   type        = string
 }
 
+variable "vpc_a_security_group_id" {
+  description = "VPC A Security Group ID"
+  type        = string
+}
+
+variable "vpc_b_security_group_id" {
+  description = "VPC B Security Group ID"
+  type        = string
+}
+
 variable "tags" {
   description = "리소스 태그"
   type        = map(string)

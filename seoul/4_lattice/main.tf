@@ -105,6 +105,9 @@ module "service_b_iam" {
   
   role_name = "service-b-role"
   instance_profile_name = "service-b-profile"
+  managed_policy_arns = [
+    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  ]
   
   inline_policies = {
     "dynamodb-access" = jsonencode({
@@ -182,6 +185,12 @@ module "service_a_sg" {
       to_port         = 22
       protocol        = "tcp"
       security_groups = [module.bastion_sg.security_group_id]
+    },
+    {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
     }
   ]
   
@@ -212,7 +221,7 @@ module "service_b_sg" {
       from_port       = 80
       to_port         = 80
       protocol        = "tcp"
-      cidr_blocks = ["10.1.0.0/16"]
+      cidr_blocks = ["0.0.0.0/0"]
     },
     {
       from_port       = 22
@@ -329,6 +338,8 @@ module "lattice" {
   
   vpc_a_id = module.vpc_a.vpc_id
   vpc_b_id = module.vpc_b.vpc_id
+  vpc_a_security_group_id = module.service_a_sg.security_group_id
+  vpc_b_security_group_id = module.service_b_sg.security_group_id
   
   tags = {
     Name = "lattice"
