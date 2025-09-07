@@ -1,0 +1,28 @@
+global:
+  image:
+    tag: v2.9.3
+
+server:
+  service:
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+  
+  extraArgs:
+    - --insecure
+
+configs:
+  params:
+    server.insecure: true
+  cm:
+    application.instanceLabelKey: argocd.argoproj.io/instance
+    url: http://localhost:8080
+    
+dex:
+  enabled: false
+
+notifications:
+  enabled: false
+
+applicationSet:
+  enabled: false
