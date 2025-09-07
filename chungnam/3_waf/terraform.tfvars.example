@@ -1,0 +1,5 @@
+aws_region = "us-east-1"
+project_name = "wsc2025"
+key_name = "waf-key"
+app_instance_type = "t3.small"
+bastion_instance_type = "t3.micro"
