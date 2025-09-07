@@ -1,0 +1,21 @@
+# AWS Configuration
+aws_region = "eu-west-1"
+
+# Project Configuration
+project_name    = "wsc2025"
+key_pair_name   = "nfw-key"
+
+# VPC CIDR Blocks
+egress_vpc_cidr = "10.0.0.0/16"
+app_vpc_cidr    = "172.16.0.0/16"
+
+# Subnet CIDR Blocks - Egress VPC
+egress_public_subnets   = ["10.0.0.0/24", "10.0.1.0/24"]
+egress_peering_subnets  = ["10.0.2.0/24", "10.0.3.0/24"]
+egress_firewall_subnets = ["10.0.4.0/24", "10.0.5.0/24"]
+
+# Subnet CIDR Blocks - App VPC
+app_private_subnets = ["172.16.0.0/24", "172.16.1.0/24"]
+
+# Availability Zones
+availability_zones = ["eu-west-1a", "eu-west-1b"]
