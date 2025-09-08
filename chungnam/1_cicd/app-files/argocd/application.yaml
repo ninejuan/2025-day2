@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: wsc2025-argo-app
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/refresh: "30s"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

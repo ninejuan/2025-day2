@@ -24,13 +24,3 @@ variable "public_key" {
   type        = string
 }
 
-variable "github_token" {
-  description = "GitHub token for runner registration"
-  type        = string
-  sensitive   = true
-}
-
-variable "github_repo" {
-  description = "GitHub repository URL"
-  type        = string
-}

@@ -99,10 +99,7 @@ resource "aws_instance" "runner" {
   associate_public_ip_address = true
   iam_instance_profile        = aws_iam_instance_profile.runner_profile.name
 
-  user_data = base64encode(templatefile("${path.module}/user_data.sh", {
-    github_token = var.github_token
-    github_repo  = var.github_repo
-  }))
+  user_data = base64encode(file("${path.module}/user_data.sh"))
 
   root_block_device {
     volume_type = "gp3"

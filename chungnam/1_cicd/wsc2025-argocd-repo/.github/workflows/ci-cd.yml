@@ -1,11 +1,9 @@
-name: CI/CD Pipeline
+name: WSK25-CHUNGNAM-D2-M1
 
 on:
   push:
     paths:
       - 'index.html'
-      - 'version'
-      - 'Dockerfile'
     branches:
       - main
 
@@ -46,26 +44,21 @@ jobs:
     - name: Build, tag, and push image to Amazon ECR
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
         VERSION: ${{ steps.version.outputs.VERSION }}
       run: |
-        # Build the Docker image
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION .
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-        
-        # Push the Docker image to ECR
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-        
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION        
         echo "Image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION"
 
     - name: Update deployment manifest
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
         VERSION: ${{ steps.version.outputs.VERSION }}
       run: |
-        # Update the image in deploy.yaml
-        sed -i "s|\(image: .*\):[[:alnum:]._-]\+|\1:$VERSION|" manifest/deploy.yaml
-        
+        # Update the image in deploy.yaml with the full ECR path and version
+        sed -i "s|image: .*|image: $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION|g" manifest/deploy.yaml
         echo "Updated deploy.yaml with new image: $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION"
 
     - name: Commit and push changes
@@ -75,7 +68,6 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        
         git add manifest/deploy.yaml
         git commit -m "Update image to $VERSION" || exit 0
         git push origin main
