@@ -4,13 +4,17 @@ on:
   push:
     paths:
       - 'index.html'
+      - 'version'
+      - 'Dockerfile'
     branches:
       - main
+
+permissions:
+  contents: write
 
 env:
   AWS_REGION: ap-southeast-1
   ECR_REPOSITORY: app-repo
-  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
   build-and-deploy:
@@ -60,17 +64,18 @@ jobs:
         VERSION: ${{ steps.version.outputs.VERSION }}
       run: |
         # Update the image in deploy.yaml
-        sed -i "s|image: .*|image: $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION|g" manifest/deploy.yaml
+        sed -i "s|\(image: .*\):[[:alnum:]._-]\+|\1:$VERSION|" manifest/deploy.yaml
         
         echo "Updated deploy.yaml with new image: $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION"
 
     - name: Commit and push changes
       env:
         VERSION: ${{ steps.version.outputs.VERSION }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         
         git add manifest/deploy.yaml
         git commit -m "Update image to $VERSION" || exit 0
-        git push
+        git push origin main

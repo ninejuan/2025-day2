@@ -1,0 +1,32 @@
+# AWS Configuration
+aws_region = "ap-southeast-1"
+
+# Cluster Configuration
+cluster_name    = "wsc2025-cluster"
+cluster_version = "1.32"
+
+# VPC Configuration
+vpc_cidr             = "10.0.0.0/16"
+public_subnet_count  = 2
+private_subnet_count = 2
+enable_nat_gateway   = true
+
+# EKS Node Configuration
+node_group_name     = "wsc2025-app-ng"
+node_instance_types = ["t3.medium"]
+node_desired_size   = 2
+node_max_size       = 4
+node_min_size       = 1
+
+# ECR Configuration
+ecr_repository_name = "app-repo"
+
+# ALB Configuration
+alb_name = "wsc2025-cicd-alb"
+
+# GitHub Runner Configuration
+runner_instance_type = "t3.medium"
+runner_public_key    = "ssh-rsa AAAAB3NzaC1yc2EAAAA... your-public-key-here"
+github_token         = "ghp_your_github_token_here"
+github_repo          = "your-username/wsc2025-argocd-repo"
+

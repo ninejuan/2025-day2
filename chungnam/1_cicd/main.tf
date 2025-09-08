@@ -13,7 +13,9 @@ module "vpc" {
 module "ecr" {
   source = "./modules/ecr"
 
-  repository_name = var.ecr_repository_name
+  repository_name   = var.ecr_repository_name
+  aws_region        = var.aws_region
+  working_directory = path.module
 }
 
 module "eks" {
@@ -43,4 +45,18 @@ module "alb" {
   oidc_provider_url = module.eks.oidc_provider_url
 
   depends_on = [module.eks, module.vpc]
+}
+
+module "ec2" {
+  source = "./modules/ec2"
+
+  cluster_name      = var.cluster_name
+  vpc_id            = module.vpc.vpc_id
+  public_subnet_id  = module.vpc.public_subnets[0]
+  instance_type     = var.runner_instance_type
+  public_key        = var.runner_public_key
+  github_token      = var.github_token
+  github_repo       = var.github_repo
+
+  depends_on = [module.vpc]
 }

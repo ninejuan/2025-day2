@@ -93,3 +93,18 @@ output "kubeconfig_update_command" {
   description = "Command to update kubeconfig"
   value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}"
 }
+
+output "runner_instance_id" {
+  description = "GitHub runner instance ID"
+  value       = module.ec2.instance_id
+}
+
+output "runner_public_ip" {
+  description = "GitHub runner public IP"
+  value       = module.ec2.public_ip
+}
+
+output "runner_ssh_command" {
+  description = "SSH command to connect to GitHub runner"
+  value       = module.ec2.ssh_command
+}

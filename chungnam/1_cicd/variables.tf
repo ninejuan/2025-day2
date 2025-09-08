@@ -92,3 +92,25 @@ variable "alb_name" {
   type        = string
   default     = "wsc2025-cicd-alb"
 }
+
+variable "runner_instance_type" {
+  description = "EC2 instance type for GitHub runner"
+  type        = string
+  default     = "t3.medium"
+}
+
+variable "runner_public_key" {
+  description = "SSH public key for GitHub runner instance"
+  type        = string
+}
+
+variable "github_token" {
+  description = "GitHub token for runner registration"
+  type        = string
+  sensitive   = true
+}
+
+variable "github_repo" {
+  description = "GitHub repository for runner registration (format: owner/repo)"
+  type        = string
+}
