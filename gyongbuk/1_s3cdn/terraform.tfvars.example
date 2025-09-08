@@ -1,0 +1,8 @@
+aws_region_kr = "ap-northeast-2"
+aws_region_us = "us-east-1"
+project_name = "s3cdn"
+environment = "production"
+
+allowed_countries = ["KR", "US"]
+
+blocked_user_agents = ["bot", "crawler", "spider"]
