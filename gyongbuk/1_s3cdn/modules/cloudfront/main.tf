@@ -6,6 +6,10 @@ resource "aws_cloudfront_function" "main" {
   code    = file("${path.module}/function.js")
 }
 
+data "aws_cloudfront_cache_policy" "caching_disabled" {
+  name = "Managed-CachingDisabled"
+}
+
 resource "aws_cloudfront_origin_request_policy" "main" {
   name    = "skills-origin-request-policy"
   comment = "Origin request policy for MRAP"
@@ -53,6 +57,17 @@ resource "aws_cloudfront_cache_policy" "main" {
 
 resource "aws_cloudfront_distribution" "main" {
   ordered_cache_behavior {
+    path_pattern               = "/test.html"
+    target_origin_id           = "S3-KR"
+    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+    cached_methods             = ["GET", "HEAD"]
+    viewer_protocol_policy     = "redirect-to-https"
+    compress                   = true
+    cache_policy_id            = data.aws_cloudfront_cache_policy.caching_disabled.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.main.id
+  }
+
+  ordered_cache_behavior {
     path_pattern             = "/us/*"
     target_origin_id         = "S3-US"
     allowed_methods          = ["GET", "HEAD", "OPTIONS"]
@@ -93,7 +108,6 @@ resource "aws_cloudfront_distribution" "main" {
     s3_origin_config { origin_access_identity = "" }
   }
 
-  # Dummy MRAP origin (not used by behaviors) to expose MRAP URL in Origins list
   origin {
     domain_name = var.mrap_domain
     origin_id   = "MRAP-DUMMY"
