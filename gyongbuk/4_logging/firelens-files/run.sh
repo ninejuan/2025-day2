@@ -65,12 +65,6 @@ cat > /tmp/fluent-bit.conf << EOF
     Match *
     Set ecs_task_id $ECS_TASK_ID
 
-[FILTER]
-    Name modify
-    Match *
-    Remove log
-    Remove message
-
 [OUTPUT]
     Name cloudwatch_logs
     Match *

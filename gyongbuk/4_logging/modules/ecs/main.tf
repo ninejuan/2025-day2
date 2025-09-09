@@ -104,36 +104,6 @@ resource "aws_ecs_task_definition" "app" {
 
   container_definitions = jsonencode([
     {
-      name      = "log_router"
-      image     = "${var.ecr_firelens_repository_url}:latest"
-      essential = true
-
-      environment = [
-        {
-          name  = "FLB_LOG_LEVEL"
-          value = "debug"
-        }
-      ]
-
-      firelensConfiguration = {
-        type = "fluentbit"
-        options = {
-          enable-ecs-log-metadata = "true"
-          config-file-type        = "file"
-          config-file-value       = "/fluent-bit/etc/extra.conf"
-        }
-      }
-
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          awslogs-group         = var.cloudwatch_log_group_name
-          awslogs-region        = "eu-west-1"
-          awslogs-stream-prefix = "firelens"
-        }
-      }
-    },
-    {
       name      = "app"
       image     = "${var.ecr_app_repository_url}:latest"
       essential = true
@@ -166,6 +136,36 @@ resource "aws_ecs_task_definition" "app" {
           condition     = "START"
         }
       ]
+    },
+    {
+      name      = "log_router"
+      image     = "${var.ecr_firelens_repository_url}:latest"
+      essential = true
+
+      environment = [
+        {
+          name  = "FLB_LOG_LEVEL"
+          value = "debug"
+        }
+      ]
+
+      firelensConfiguration = {
+        type = "fluentbit"
+        options = {
+          enable-ecs-log-metadata = "true"
+          config-file-type        = "file"
+          config-file-value       = "/fluent-bit/etc/extra.conf"
+        }
+      }
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = var.cloudwatch_log_group_name
+          awslogs-region        = "eu-west-1"
+          awslogs-stream-prefix = "firelens"
+        }
+      }
     }
   ])
 
