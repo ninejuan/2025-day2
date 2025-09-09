@@ -9,4 +9,4 @@ COPY app.py .
 
 EXPOSE 5000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--access-logfile", "-", "--access-logformat", "%(h)s - - [%(t)s] \"%(r)s\" %(s)s -", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--access-logfile", "-", "--access-logformat", "%(h)s - - [%(t)s] \"%(m)s %(U)s HTTP/%(H)s\" %(s)s -", "app:app"]

@@ -104,40 +104,16 @@ resource "aws_ecs_task_definition" "app" {
 
   container_definitions = jsonencode([
     {
-      name      = "app"
-      image     = "${var.ecr_app_repository_url}:latest"
-      essential = true
-      
-      portMappings = [
-        {
-          containerPort = 5000
-          hostPort      = 5000
-          protocol      = "tcp"
-        }
-      ]
-
-      logConfiguration = {
-        logDriver = "awsfirelens"
-      }
-
-      environment = [
-        {
-          name  = "FLASK_ENV"
-          value = "production"
-        }
-      ]
-
-      dependsOn = [
-        {
-          containerName = "log_router"
-          condition     = "START"
-        }
-      ]
-    },
-    {
       name      = "log_router"
       image     = "${var.ecr_firelens_repository_url}:latest"
       essential = true
+
+      environment = [
+        {
+          name  = "FLB_LOG_LEVEL"
+          value = "debug"
+        }
+      ]
 
       firelensConfiguration = {
         type = "fluentbit"
@@ -156,6 +132,40 @@ resource "aws_ecs_task_definition" "app" {
           awslogs-stream-prefix = "firelens"
         }
       }
+    },
+    {
+      name      = "app"
+      image     = "${var.ecr_app_repository_url}:latest"
+      essential = true
+      
+      portMappings = [
+        {
+          containerPort = 5000
+          hostPort      = 5000
+          protocol      = "tcp"
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awsfirelens"
+        options = {
+          tag = "app-logs"
+        }
+      }
+
+      environment = [
+        {
+          name  = "FLASK_ENV"
+          value = "production"
+        }
+      ]
+
+      dependsOn = [
+        {
+          containerName = "log_router"
+          condition     = "START"
+        }
+      ]
     }
   ])
 
