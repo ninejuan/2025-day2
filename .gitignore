@@ -48,3 +48,5 @@ Thumbs.db
 *venv*
 
 __pycache__/
+
+gyongbuk/3_cicd/DEPLOYMENT.md

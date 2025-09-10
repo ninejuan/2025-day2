@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/YOUR_GITHUB_ORG/day2-product.git
     path: charts/app
-    targetRevision: HEAD
+    targetRevision: dev
     helm:
       valueFiles:
         - ../../values/dev.values.yaml
@@ -16,9 +16,6 @@ spec:
     server: https://kubernetes.default.svc
     namespace: app
   syncPolicy:
-    automated:
-      prune: false
-      selfHeal: false
     syncOptions:
       - CreateNamespace=true
   revisionHistoryLimit: 10

@@ -54,15 +54,3 @@ rollouts:
       previewService: product-preview
       autoPromotionEnabled: true
       scaleDownDelaySeconds: 30
-      prePromotionAnalysis:
-        templates:
-        - templateName: success-rate
-        args:
-        - name: service-name
-          value: product-preview
-      postPromotionAnalysis:
-        templates:
-        - templateName: success-rate
-        args:
-        - name: service-name
-          value: product-active
