@@ -1,4 +1,3 @@
-# VPC Peering Connection
 resource "aws_vpc_peering_connection" "main" {
   peer_vpc_id = var.peer_vpc_id
   vpc_id      = var.vpc_id
@@ -9,7 +8,6 @@ resource "aws_vpc_peering_connection" "main" {
   }
 }
 
-# Requester VPC Route Tables - Add routes to peer VPC
 resource "aws_route" "requester_private_to_peer" {
   count                     = length(var.requester_private_route_table_ids)
   route_table_id            = var.requester_private_route_table_ids[count.index]
@@ -24,7 +22,6 @@ resource "aws_route" "requester_public_to_peer" {
   vpc_peering_connection_id = aws_vpc_peering_connection.main.id
 }
 
-# Peer VPC Route Tables - Add routes to requester VPC
 resource "aws_route" "peer_private_to_requester" {
   count                     = length(var.peer_private_route_table_ids)
   route_table_id            = var.peer_private_route_table_ids[count.index]
@@ -39,7 +36,6 @@ resource "aws_route" "peer_public_to_requester" {
   vpc_peering_connection_id = aws_vpc_peering_connection.main.id
 }
 
-# Security Group Rules for VPC Peering (All Traffic)
 resource "aws_security_group_rule" "requester_allow_peer" {
   count                    = var.enable_security_group_rules ? 1 : 0
   type                     = "ingress"
@@ -62,7 +58,6 @@ resource "aws_security_group_rule" "peer_allow_requester" {
   description              = "Allow all traffic from requester VPC"
 }
 
-# DNS Resolution for VPC Peering
 resource "aws_vpc_peering_connection_options" "main" {
   vpc_peering_connection_id = aws_vpc_peering_connection.main.id
 

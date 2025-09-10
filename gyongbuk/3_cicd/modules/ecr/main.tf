@@ -69,3 +69,34 @@ resource "aws_ecr_lifecycle_policy" "prod" {
     ]
   })
 }
+
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
+resource "null_resource" "push_initial_dev_image" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      cd ${path.root}/day2-product
+      
+      aws ecr get-login-password --region ${data.aws_region.current.name} | docker login --username AWS --password-stdin ${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com
+      
+      docker buildx build --platform linux/amd64 -t ${aws_ecr_repository.dev.repository_url}:v1.0.0 --push .
+    EOT
+  }
+
+  depends_on = [aws_ecr_repository.dev]
+}
+
+resource "null_resource" "push_initial_prod_image" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      cd ${path.root}/day2-product
+      
+      aws ecr get-login-password --region ${data.aws_region.current.name} | docker login --username AWS --password-stdin ${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com
+      
+      docker buildx build --platform linux/amd64 -t ${aws_ecr_repository.prod.repository_url}:v1.0.0 --push .
+    EOT
+  }
+
+  depends_on = [aws_ecr_repository.prod]
+}
