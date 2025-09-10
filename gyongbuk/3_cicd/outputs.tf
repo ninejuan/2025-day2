@@ -58,3 +58,13 @@ output "github_actions_role_arn" {
   description = "ARN of the GitHub Actions IAM role"
   value       = module.kubernetes.github_actions_role_arn
 }
+
+output "vpc_peering_connection_id" {
+  description = "ID of the VPC peering connection between dev and prod"
+  value       = module.vpc_peering.peering_connection_id
+}
+
+output "vpc_peering_status" {
+  description = "Status of the VPC peering connection"
+  value       = module.vpc_peering.peering_connection_status
+}

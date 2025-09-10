@@ -119,6 +119,36 @@ module "kubernetes" {
   ]
 }
 
+module "vpc_peering" {
+  source = "./modules/vpc-peering"
+
+  peering_name = "dev-prod-vpc-peering"
+  
+  vpc_id      = module.dev_vpc.vpc_id
+  peer_vpc_id = module.prod_vpc.vpc_id
+  
+  requester_vpc_cidr = "10.0.0.0/16"
+  peer_vpc_cidr      = "10.1.0.0/16"
+  
+  requester_private_route_table_ids = module.dev_vpc.private_route_table_ids
+  requester_public_route_table_ids  = module.dev_vpc.public_route_table_ids
+  peer_private_route_table_ids      = module.prod_vpc.private_route_table_ids
+  peer_public_route_table_ids       = module.prod_vpc.public_route_table_ids
+  
+  enable_security_group_rules   = true
+  requester_security_group_id   = module.dev_eks.cluster_security_group_id
+  peer_security_group_id        = module.prod_eks.cluster_security_group_id
+  
+  enable_dns_resolution = true
+
+  depends_on = [
+    module.dev_vpc,
+    module.prod_vpc,
+    module.dev_eks,
+    module.prod_eks
+  ]
+}
+
 module "helm" {
   source = "./modules/helm"
 
@@ -148,6 +178,7 @@ module "helm" {
     module.prod_eks,
     module.dev_vpc,
     module.prod_vpc,
+    module.vpc_peering,
     kubernetes_namespace.dev_argocd,
     kubernetes_namespace.dev_app,
     kubernetes_namespace.prod_app,
