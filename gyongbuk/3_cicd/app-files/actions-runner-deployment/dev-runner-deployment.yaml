@@ -2,12 +2,12 @@ apiVersion: actions.summerwind.dev/v1alpha1
 kind: RunnerDeployment
 metadata:
   name: dev-runner-deployment
-  namespace: actions-runner-system
+  namespace: app
 spec:
   replicas: 2
   template:
     spec:
-      repository: YOUR_GITHUB_ORG/day2-product
+      repository: ninejuan/day2-product
       labels:
         - dev
       resources:

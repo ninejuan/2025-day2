@@ -112,7 +112,10 @@ module "kubernetes" {
 
   depends_on = [
     module.dev_eks,
-    module.prod_eks
+    module.prod_eks,
+    kubernetes_namespace.dev_app,
+    kubernetes_namespace.prod_app,
+    kubernetes_namespace.dev_argocd
   ]
 }
 
@@ -130,6 +133,8 @@ module "helm" {
   prod_cluster_name = module.prod_eks.cluster_name
   aws_region        = var.aws_region
   github_token      = var.github_token
+  dev_vpc_id        = module.dev_vpc.vpc_id
+  prod_vpc_id       = module.prod_vpc.vpc_id
 
   enable_argocd_dev    = true
   enable_rollouts_dev  = true
@@ -138,7 +143,14 @@ module "helm" {
   enable_alb_prod      = true
 
   depends_on = [
-    module.kubernetes
+    module.kubernetes,
+    module.dev_eks,
+    module.prod_eks,
+    module.dev_vpc,
+    module.prod_vpc,
+    kubernetes_namespace.dev_argocd,
+    kubernetes_namespace.dev_app,
+    kubernetes_namespace.prod_app,
   ]
 }
 

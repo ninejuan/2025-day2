@@ -108,3 +108,13 @@ variable "github_token" {
   description = "GitHub token for ARC authSecret"
   sensitive   = true
 }
+
+variable "dev_vpc_id" {
+  type        = string
+  description = "Dev VPC ID"
+}
+
+variable "prod_vpc_id" {
+  type        = string
+  description = "Prod VPC ID"
+}

@@ -31,7 +31,7 @@ resource "helm_release" "argocd" {
       }
       server = {
         service = {
-          type = "LoadBalancer"
+          type = "ClusterIP"
         }
         extraArgs = ["--insecure"]
       }
@@ -43,10 +43,15 @@ resource "helm_release" "argocd" {
     })
   ]
 
+  depends_on = [
+    helm_release.alb_controller_dev
+  ]
+
   timeout     = 600
   wait        = false
   atomic      = false
   max_history = 2
+
 }
 
 resource "helm_release" "cert_manager_dev" {
@@ -64,6 +69,10 @@ resource "helm_release" "cert_manager_dev" {
     yamlencode({
       installCRDs = true
     })
+  ]
+
+  depends_on = [
+    helm_release.alb_controller_dev
   ]
 
   timeout     = 600
@@ -87,6 +96,10 @@ resource "helm_release" "cert_manager_prod" {
     yamlencode({
       installCRDs = true
     })
+  ]
+
+  depends_on = [
+    helm_release.alb_controller_prod
   ]
 
   timeout     = 600
@@ -224,10 +237,14 @@ resource "helm_release" "argo_rollouts_dev" {
       dashboard = {
         enabled = true
         service = {
-          type = "LoadBalancer"
+          type = "ClusterIP"
         }
       }
     })
+  ]
+
+  depends_on = [
+    helm_release.alb_controller_dev
   ]
 
   timeout     = 600
@@ -255,9 +272,16 @@ resource "helm_release" "argo_rollouts_prod" {
     })
   ]
 
-  timeout    = 600
-  wait       = true
-  atomic     = true
+  depends_on = [
+    helm_release.alb_controller_prod
+  ]
+
+  timeout          = 600
+  wait             = false
+  atomic           = false
+  cleanup_on_fail  = true
+  force_update     = true
+  replace          = true
   max_history = 2
 }
 
@@ -276,6 +300,11 @@ resource "helm_release" "alb_controller_dev" {
   }
 
   set {
+    name  = "vpcId"
+    value = var.dev_vpc_id
+  }
+
+  set {
     name  = "serviceAccount.create"
     value = "false"
   }
@@ -291,9 +320,10 @@ resource "helm_release" "alb_controller_dev" {
   }
 
   timeout    = 600
-  wait       = true
-  atomic     = true
+  wait       = false
+  atomic     = false
   max_history = 2
+
 }
 
 resource "helm_release" "alb_controller_prod" {
@@ -311,6 +341,11 @@ resource "helm_release" "alb_controller_prod" {
   }
 
   set {
+    name  = "vpcId"
+    value = var.prod_vpc_id
+  }
+
+  set {
     name  = "serviceAccount.create"
     value = "false"
   }
@@ -325,8 +360,12 @@ resource "helm_release" "alb_controller_prod" {
     value = var.aws_region
   }
 
-  timeout    = 600
-  wait       = true
-  atomic     = true
+  timeout          = 600
+  wait             = false
+  atomic           = false
+  cleanup_on_fail  = true
+  force_update     = true
+  replace          = true
   max_history = 2
+
 }
