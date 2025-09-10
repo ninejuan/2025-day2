@@ -27,3 +27,9 @@ variable "github_repo" {
   default     = "day2-product"
 }
 
+variable "github_token" {
+  description = "GitHub token for ARC Helm chart authSecret"
+  type        = string
+  sensitive   = true
+}
+

@@ -122,13 +122,15 @@ module "helm" {
   providers = {
     helm.dev  = helm.dev
     helm.prod = helm.prod
+    kubernetes.dev  = kubernetes.dev
+    kubernetes.prod = kubernetes.prod
   }
 
   dev_cluster_name  = module.dev_eks.cluster_name
   prod_cluster_name = module.prod_eks.cluster_name
   aws_region        = var.aws_region
+  github_token      = var.github_token
 
-  # enable/disable knobs if needed (defaults already true)
   enable_argocd_dev    = true
   enable_rollouts_dev  = true
   enable_rollouts_prod = true

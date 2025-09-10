@@ -5,10 +5,14 @@ terraform {
       version = "~> 2.11"
       configuration_aliases = [helm.dev, helm.prod]
     }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.23"
+      configuration_aliases = [kubernetes.dev, kubernetes.prod]
+    }
   }
 }
 
-# Argo CD - dev only
 resource "helm_release" "argocd" {
   count      = var.enable_argocd_dev ? 1 : 0
   provider   = helm.dev
@@ -45,7 +49,164 @@ resource "helm_release" "argocd" {
   max_history = 2
 }
 
-# Argo Rollouts - dev
+resource "helm_release" "cert_manager_dev" {
+  count      = var.enable_cert_manager_dev ? 1 : 0
+  provider   = helm.dev
+  name       = "cert-manager"
+  repository = "https://charts.jetstack.io"
+  chart      = "cert-manager"
+  namespace  = "cert-manager"
+  version    = var.cert_manager_chart_version
+
+  create_namespace = true
+
+  values = [
+    yamlencode({
+      installCRDs = true
+    })
+  ]
+
+  timeout     = 600
+  wait        = false
+  atomic      = false
+  max_history = 2
+}
+
+resource "helm_release" "cert_manager_prod" {
+  count      = var.enable_cert_manager_prod ? 1 : 0
+  provider   = helm.prod
+  name       = "cert-manager"
+  repository = "https://charts.jetstack.io"
+  chart      = "cert-manager"
+  namespace  = "cert-manager"
+  version    = var.cert_manager_chart_version
+
+  create_namespace = true
+
+  values = [
+    yamlencode({
+      installCRDs = true
+    })
+  ]
+
+  timeout     = 600
+  wait        = false
+  atomic      = false
+  max_history = 2
+}
+
+resource "kubernetes_namespace" "arc_dev" {
+  count    = var.enable_arc_dev ? 1 : 0
+  provider = kubernetes.dev
+  metadata {
+    name = "actions-runner-system"
+  }
+}
+
+resource "kubernetes_secret" "arc_token_dev" {
+  count    = var.enable_arc_dev ? 1 : 0
+  provider = kubernetes.dev
+  metadata {
+    name      = "controller-manager"
+    namespace = "actions-runner-system"
+  }
+  type = "Opaque"
+  data = {
+    github_token = base64encode(var.github_token)
+  }
+  depends_on = [kubernetes_namespace.arc_dev]
+}
+
+resource "kubernetes_namespace" "arc_prod" {
+  count    = var.enable_arc_prod ? 1 : 0
+  provider = kubernetes.prod
+  metadata {
+    name = "actions-runner-system"
+  }
+}
+
+resource "kubernetes_secret" "arc_token_prod" {
+  count    = var.enable_arc_prod ? 1 : 0
+  provider = kubernetes.prod
+  metadata {
+    name      = "controller-manager"
+    namespace = "actions-runner-system"
+  }
+  type = "Opaque"
+  data = {
+    github_token = base64encode(var.github_token)
+  }
+  depends_on = [kubernetes_namespace.arc_prod]
+}
+
+resource "helm_release" "arc_dev" {
+  count      = var.enable_arc_dev ? 1 : 0
+  provider   = helm.dev
+  name       = "actions-runner-controller"
+  repository = "https://actions-runner-controller.github.io/actions-runner-controller"
+  chart      = "actions-runner-controller"
+  namespace  = "actions-runner-system"
+  version    = var.arc_chart_version
+
+  create_namespace = false
+
+  values = [
+    yamlencode({
+      authSecret = {
+        name = "controller-manager"
+        key  = "github_token"
+      }
+      scope = {
+        singleNamespace = false
+      }
+    })
+  ]
+
+  timeout     = 600
+  wait        = false
+  atomic      = false
+  max_history = 2
+
+  depends_on = [
+    helm_release.cert_manager_dev,
+    kubernetes_secret.arc_token_dev
+  ]
+}
+
+resource "helm_release" "arc_prod" {
+  count      = var.enable_arc_prod ? 1 : 0
+  provider   = helm.prod
+  name       = "actions-runner-controller"
+  repository = "https://actions-runner-controller.github.io/actions-runner-controller"
+  chart      = "actions-runner-controller"
+  namespace  = "actions-runner-system"
+  version    = var.arc_chart_version
+
+  create_namespace = false
+
+  values = [
+    yamlencode({
+      authSecret = {
+        name = "controller-manager"
+        key  = "github_token"
+      }
+      scope = {
+        singleNamespace = false
+      }
+    })
+  ]
+
+  timeout     = 600
+  wait        = false
+  atomic      = false
+  max_history = 2
+
+  depends_on = [
+    helm_release.cert_manager_prod,
+    kubernetes_secret.arc_token_prod
+  ]
+}
+
 resource "helm_release" "argo_rollouts_dev" {
   count      = var.enable_rollouts_dev ? 1 : 0
   provider   = helm.dev
@@ -75,7 +236,6 @@ resource "helm_release" "argo_rollouts_dev" {
   max_history = 2
 }
 
-# Argo Rollouts - prod
 resource "helm_release" "argo_rollouts_prod" {
   count      = var.enable_rollouts_prod ? 1 : 0
   provider   = helm.prod
@@ -101,7 +261,6 @@ resource "helm_release" "argo_rollouts_prod" {
   max_history = 2
 }
 
-# AWS Load Balancer Controller - dev
 resource "helm_release" "alb_controller_dev" {
   count      = var.enable_alb_dev ? 1 : 0
   provider   = helm.dev
@@ -137,7 +296,6 @@ resource "helm_release" "alb_controller_dev" {
   max_history = 2
 }
 
-# AWS Load Balancer Controller - prod
 resource "helm_release" "alb_controller_prod" {
   count      = var.enable_alb_prod ? 1 : 0
   provider   = helm.prod

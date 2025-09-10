@@ -66,3 +66,45 @@ variable "prod_cluster_name" {
   type        = string
   description = "Prod EKS cluster name"
 }
+
+variable "enable_cert_manager_dev" {
+  type        = bool
+  description = "Install cert-manager in dev"
+  default     = true
+}
+
+variable "enable_cert_manager_prod" {
+  type        = bool
+  description = "Install cert-manager in prod"
+  default     = true
+}
+
+variable "cert_manager_chart_version" {
+  type        = string
+  description = "cert-manager chart version"
+  default     = "v1.13.2"
+}
+
+variable "enable_arc_dev" {
+  type        = bool
+  description = "Install Actions Runner Controller in dev"
+  default     = true
+}
+
+variable "enable_arc_prod" {
+  type        = bool
+  description = "Install Actions Runner Controller in prod"
+  default     = true
+}
+
+variable "arc_chart_version" {
+  type        = string
+  description = "Actions Runner Controller chart version"
+  default     = "0.23.3"
+}
+
+variable "github_token" {
+  type        = string
+  description = "GitHub token for ARC authSecret"
+  sensitive   = true
+}
