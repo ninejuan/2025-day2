@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prod
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/YOUR_GITHUB_ORG/day2-product.git
+    path: charts/app
+    targetRevision: HEAD
+    helm:
+      valueFiles:
+        - ../../values/prod.values.yaml
+  destination:
+    server: PROD_CLUSTER_SERVER_URL
+    namespace: app
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true
+  revisionHistoryLimit: 10

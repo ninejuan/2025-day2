@@ -1,0 +1,87 @@
+name: Prod CI/CD Pipeline
+
+on:
+  pull_request:
+    branches:
+      - prod
+    types: [labeled, closed]
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  build-and-deploy:
+    if: |
+      github.event.pull_request.merged == true && 
+      contains(github.event.pull_request.labels.*.name, 'approval')
+    runs-on: [self-hosted, prod]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHubActions
+          aws-region: eu-central-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push multi-arch image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: product/prod
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            --push .
+
+      - name: Update values file
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: product/prod
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          sed -i "s|repository: \".*\"|repository: \"$ECR_REGISTRY/$ECR_REPOSITORY\"|g" values/prod.values.yaml
+          sed -i "s|tag: \".*\"|tag: \"$IMAGE_TAG\"|g" values/prod.values.yaml
+
+      - name: Commit and push changes to prod
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add values/prod.values.yaml
+          git commit -m "Update prod image to ${{ github.sha }}"
+          git push origin prod
+
+      - name: Fast-forward dev branch
+        run: |
+          git checkout dev
+          git merge --ff-only prod
+          git push origin dev
+
+      - name: Install ArgoCD CLI
+        run: |
+          curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+          rm argocd-linux-amd64
+
+      - name: Sync ArgoCD Application
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+        run: |
+          argocd app sync prod --server $ARGOCD_SERVER --auth-token $ARGOCD_AUTH_TOKEN --insecure
+          argocd app wait prod --server $ARGOCD_SERVER --auth-token $ARGOCD_AUTH_TOKEN --insecure

@@ -1,0 +1,5 @@
+aws_region         = "eu-central-1"
+availability_zones  = ["eu-central-1a", "eu-central-1b"]
+key_name           = "cicd-key"
+github_org         = "your-github-org"
+github_repo        = "day2-product"

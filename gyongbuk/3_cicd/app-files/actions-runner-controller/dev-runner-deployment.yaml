@@ -1,0 +1,25 @@
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
+metadata:
+  name: dev-runner-deployment
+  namespace: actions-runner-system
+spec:
+  replicas: 2
+  template:
+    spec:
+      repository: YOUR_GITHUB_ORG/day2-product
+      labels:
+        - dev
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 2Gi
+        requests:
+          cpu: 500m
+          memory: 1Gi
+      volumeMounts:
+        - name: work
+          mountPath: /runner/_work
+      volumes:
+        - name: work
+          emptyDir: {}
