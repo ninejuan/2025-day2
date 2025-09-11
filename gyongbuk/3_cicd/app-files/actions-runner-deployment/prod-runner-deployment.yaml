@@ -8,6 +8,7 @@ spec:
   template:
     spec:
       repository: ninejuan/day2-product
+      githubTokenSecret: github-token
       labels:
         - prod
       resources:
