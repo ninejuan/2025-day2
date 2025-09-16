@@ -1,16 +1,21 @@
 apiVersion: actions.summerwind.dev/v1alpha1
 kind: RunnerDeployment
 metadata:
-  name: prod-runner-deployment
+  name: dev-runner-deployment
   namespace: app
 spec:
   replicas: 2
   template:
     spec:
       repository: ninejuan/day2-product
-      githubTokenSecret: github-token
+      env:
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-token
+              key: github_token
       labels:
-        - prod
+        - dev
       resources:
         limits:
           cpu: 1000m

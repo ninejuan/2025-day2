@@ -6,6 +6,7 @@ module "dev_vpc" {
   availability_zones    = var.availability_zones
   public_subnet_cidrs   = ["10.0.1.0/24", "10.0.2.0/24"]
   private_subnet_cidrs  = ["10.0.11.0/24", "10.0.12.0/24"]
+  cluster_name          = "dev-cluster"
 }
 
 module "prod_vpc" {
@@ -16,6 +17,7 @@ module "prod_vpc" {
   availability_zones    = var.availability_zones
   public_subnet_cidrs   = ["10.1.1.0/24", "10.1.2.0/24"]
   private_subnet_cidrs  = ["10.1.11.0/24", "10.1.12.0/24"]
+  cluster_name          = "prod-cluster"
 }
 
 module "dev_eks" {
@@ -23,7 +25,7 @@ module "dev_eks" {
 
   cluster_name        = "dev-cluster"
   vpc_id              = module.dev_vpc.vpc_id
-  subnet_ids          = concat(module.dev_vpc.public_subnet_ids, module.dev_vpc.private_subnet_ids)
+  subnet_ids          = module.dev_vpc.private_subnet_ids
   private_subnet_ids  = module.dev_vpc.private_subnet_ids
 }
 
@@ -32,7 +34,7 @@ module "prod_eks" {
 
   cluster_name        = "prod-cluster"
   vpc_id              = module.prod_vpc.vpc_id
-  subnet_ids          = concat(module.prod_vpc.public_subnet_ids, module.prod_vpc.private_subnet_ids)
+  subnet_ids          = module.prod_vpc.private_subnet_ids
   private_subnet_ids  = module.prod_vpc.private_subnet_ids
 }
 
@@ -149,40 +151,4 @@ module "vpc_peering" {
   ]
 }
 
-module "helm" {
-  source = "./modules/helm"
-
-  providers = {
-    helm.dev  = helm.dev
-    helm.prod = helm.prod
-    kubernetes.dev  = kubernetes.dev
-    kubernetes.prod = kubernetes.prod
-  }
-
-  dev_cluster_name  = module.dev_eks.cluster_name
-  prod_cluster_name = module.prod_eks.cluster_name
-  aws_region        = var.aws_region
-  github_token      = var.github_token
-  dev_vpc_id        = module.dev_vpc.vpc_id
-  prod_vpc_id       = module.prod_vpc.vpc_id
-
-  enable_argocd_dev    = true
-  enable_rollouts_dev  = true
-  enable_rollouts_prod = true
-  enable_alb_dev       = true
-  enable_alb_prod      = true
-
-  depends_on = [
-    module.kubernetes,
-    module.dev_eks,
-    module.prod_eks,
-    module.dev_vpc,
-    module.prod_vpc,
-    module.vpc_peering,
-    kubernetes_namespace.dev_argocd,
-    kubernetes_namespace.dev_app,
-    kubernetes_namespace.prod_app,
-  ]
-}
-
-
+ 

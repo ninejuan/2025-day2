@@ -1,87 +1,111 @@
-name: Prod CI/CD Pipeline
-
+name: Prod Pipeline
 on:
   pull_request:
-    branches:
-      - prod
-    types: [labeled, closed]
-
+    branches: [ "prod" ]
+    types: [opened, synchronize, reopened, labeled]
 permissions:
-  id-token: write
   contents: write
   pull-requests: write
-
+  id-token: write
+  actions: read
 jobs:
-  build-and-deploy:
-    if: |
-      github.event.pull_request.merged == true && 
-      contains(github.event.pull_request.labels.*.name, 'approval')
+  ff-merge-build-deploy:
+    if: ${{ contains(join(github.event.pull_request.labels.*.name, ','), 'approval') }}
     runs-on: [self-hosted, prod]
-    
+    timeout-minutes: 5
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
+          
+      - name: Fast-forward merge dev → prod
+        run: |
+          git fetch origin dev:refs/remotes/origin/dev
+          git fetch origin prod:refs/remotes/origin/prod
+          git checkout prod
+          git reset --hard origin/prod
+          git merge --ff-only origin/dev
+          git push origin prod
+          
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+          
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          role-session-name: GitHubActions
-          aws-region: eu-central-1
-
+          role-session-name: GitHubActions-Prod
+          aws-region: ${{ secrets.AWS_REGION }}
+          
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push multi-arch image
+        
+      - name: Get commit SHA
+        id: commit
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        
+      - name: Build and push Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: product/prod
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ steps.commit.outputs.sha }}
         run: |
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
+            --file ./Dockerfile \
             --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-            --push .
-
-      - name: Update values file
+            --push \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            .
+            
+      - name: Update image tag in values file
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: product/prod
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ steps.commit.outputs.sha }}
         run: |
-          sed -i "s|repository: \".*\"|repository: \"$ECR_REGISTRY/$ECR_REPOSITORY\"|g" values/prod.values.yaml
-          sed -i "s|tag: \".*\"|tag: \"$IMAGE_TAG\"|g" values/prod.values.yaml
-
-      - name: Commit and push changes to prod
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          sed -i "s|tag: .*|tag: ${IMAGE_TAG}|" values/prod.values.yaml
           git add values/prod.values.yaml
-          git commit -m "Update prod image to ${{ github.sha }}"
+          git commit -m "Update prod image tag to ${IMAGE_TAG}"
           git push origin prod
-
-      - name: Fast-forward dev branch
-        run: |
-          git checkout dev
-          git merge --ff-only prod
-          git push origin dev
-
+          
       - name: Install ArgoCD CLI
         run: |
           curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
           sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
           rm argocd-linux-amd64
 
-      - name: ArgoCD Sync
+      - name: Sync ArgoCD Application
         env:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
-          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+          ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
+          APP_NAME: ${{ secrets.ARGOCD_APP_NAME_PROD }}
         run: |
-          argocd app sync prod --server $ARGOCD_SERVER --auth-token $ARGOCD_AUTH_TOKEN --insecure
-          argocd app wait prod --server $ARGOCD_SERVER --auth-token $ARGOCD_AUTH_TOKEN --insecure
+          /usr/local/bin/argocd app sync $APP_NAME \
+            --server $ARGOCD_SERVER \
+            --auth-token $ARGOCD_TOKEN \
+            --force \
+            --plaintext
+            
+      - name: Comment on PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = ("${{ job.status }}" === "success")
+              ? `✅ Prod deployment successful! Image: ${{ steps.login-ecr.outputs.registry }}/product/prod:${{ steps.commit.outputs.sha }} Deployed to prod cluster via ArgoCD.`
+              : `❌ Prod deployment failed. Please check the workflow logs.`;
+            await github.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body
+            });

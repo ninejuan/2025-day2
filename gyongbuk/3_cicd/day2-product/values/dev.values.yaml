@@ -4,7 +4,7 @@ namespace: app
 replicaCount: 2
 
 image:
-  repository: ""
+  repository: "571480186401.dkr.ecr.eu-central-1.amazonaws.com/product/dev"
   pullPolicy: IfNotPresent
   tag: "v1.0.0"
 

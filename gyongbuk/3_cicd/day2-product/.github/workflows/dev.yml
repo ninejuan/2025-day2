@@ -1,79 +1,152 @@
-name: Dev CI/CD Pipeline
+name: Dev Auto Merge & Deploy
 
 on:
   pull_request:
-    branches:
-      - dev
-    types: [closed]
+    branches: [dev]
+    types: [opened, synchronize, reopened]
 
 permissions:
-  id-token: write
   contents: write
   pull-requests: write
+  id-token: write
+  actions: read
+
+env:
+  ECR_REPOSITORY: product/dev
+  DOCKERFILE_PATH: ./Dockerfile
+  VALUES_FILE: values/dev.values.yaml
 
 jobs:
-  build-and-deploy:
-    if: github.event.pull_request.merged == true
+  auto-merge-and-deploy:
     runs-on: [self-hosted, dev]
-    
+    timeout-minutes: 10
     steps:
-      - name: Checkout code
+      - name: Checkout PR branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify feature branch
+        run: |
+          if [[ "${{ github.event.pull_request.head.ref }}" != feature/* ]]; then
+            echo "Not a feature branch PR. Skipping job."
+            exit 0
+          fi
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Auto merge PR via GitHub API
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) { core.setFailed('No PR context'); return; }
+            try {
+              await github.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                merge_method: 'merge'
+              });
+            } catch (e) {
+              core.setFailed(`Merge failed: ${e.message}`);
+              return;
+            }
+            try {
+              await github.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `heads/${pr.head.ref}`
+              });
+            } catch (e) {
+              core.warning(`Delete branch failed (ignored): ${e.message}`);
+            }
+
+      - name: Checkout dev branch after merge
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          role-session-name: GitHubActions
-          aws-region: eu-central-1
+          role-session-name: GitHubActions-Dev
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Get commit SHA
+        id: commit
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Build and push multi-arch image
+      - name: Build and push Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: product/dev
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ steps.commit.outputs.sha }}
         run: |
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
+            --file $DOCKERFILE_PATH \
             --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-            --push .
+            --push \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            .
 
-      - name: Update values file
+      - name: Update image tag in values file
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: product/dev
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ steps.commit.outputs.sha }}
         run: |
-          sed -i "s|repository: \".*\"|repository: \"$ECR_REGISTRY/$ECR_REPOSITORY\"|g" values/dev.values.yaml
-          sed -i "s|tag: \".*\"|tag: \"$IMAGE_TAG\"|g" values/dev.values.yaml
-
-      - name: Commit and push changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          sed -i "s|tag: .*|tag: ${IMAGE_TAG}|" values/dev.values.yaml
+    
           git add values/dev.values.yaml
-          git commit -m "Update dev image to ${{ github.sha }}"
+          git commit -m "Update dev image tag to ${IMAGE_TAG}"
           git push origin dev
-
+          
       - name: Install ArgoCD CLI
         run: |
           curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
           sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
           rm argocd-linux-amd64
 
-      - name: ArgoCD Sync
+      - name: Sync ArgoCD Application
         env:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
-          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+          ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
+          APP_NAME: ${{ secrets.ARGOCD_APP_NAME_DEV }}
         run: |
-          argocd app sync dev --server $ARGOCD_SERVER --auth-token $ARGOCD_AUTH_TOKEN --insecure
-          argocd app wait dev --server $ARGOCD_SERVER --auth-token $ARGOCD_AUTH_TOKEN --insecure
+          /usr/local/bin/argocd app sync $APP_NAME \
+            --server $ARGOCD_SERVER \
+            --auth-token $ARGOCD_TOKEN \
+            --force \
+            --plaintext
+
+      - name: Comment on PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = ("${{ job.status }}" === "success")
+              ? `✅ Dev deployment successful! Image: ${{ steps.login-ecr.outputs.registry }}/${{ process.env.ECR_REPOSITORY }}:${{ steps.commit.outputs.sha }} Deployed to dev cluster via ArgoCD.`
+              : `❌ Dev deployment failed. Please check the workflow logs.`;
+            await github.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body
+            });
