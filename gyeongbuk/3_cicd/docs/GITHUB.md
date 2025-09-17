@@ -21,11 +21,8 @@
 
 ## 4) GitHub Secrets (Repo-level)
 - `AWS_ROLE_ARN`: Terraform 출력값 `github_actions_role_arn`
-- `AWS_REGION`: `eu-central-1`
 - `ARGOCD_SERVER`: dev-cluster ArgoCD Server 주소 (LB 또는 NodePort)
 - `ARGOCD_TOKEN`: ArgoCD `github-actions` 계정 API 토큰
-- `ARGOCD_APP_NAME_DEV`: `dev`
-- `ARGOCD_APP_NAME_PROD`: `prod`
 
 ## 5) Self-hosted Runner (ARC)
 - dev/prod 클러스터에 각각 2개씩 Runner 유지

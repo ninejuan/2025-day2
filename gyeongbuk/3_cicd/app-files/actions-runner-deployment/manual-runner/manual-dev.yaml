@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: manual-runner-dev
+  namespace: app
+  labels:
+    app: github-runner
+    environment: dev
+spec:
+  containers:
+  - name: runner
+    image: summerwind/actions-runner:latest
+    env:
+    - name: GITHUB_TOKEN
+      value: "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"
+    - name: RUNNER_REPO
+      value: "ninejuan/day2-product"
+    - name: RUNNER_TOKEN
+      value: "AS3KYFB2NSKRWTKLIZQ74K3IYI24I"
+    - name: RUNNER_NAME
+      value: "dev-runner-1h2md-9fkks"
+    - name: RUNNER_LABELS
+      value: "dev,self-hosted,Linux,X64"
+    - name: RUNNER_WORKDIR
+      value: "/runner/_work"
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    volumeMounts:
+    - name: work
+      mountPath: /runner/_work
+  volumes:
+  - name: work
+    emptyDir: {}
+  restartPolicy: Always
