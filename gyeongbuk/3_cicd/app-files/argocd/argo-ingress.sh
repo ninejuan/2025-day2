@@ -23,6 +23,7 @@ fi
 
 kubectl patch configmap argocd-cm -n argocd --type merge -p "{\"data\":{\"url\":\"http://$ALB_URL\"}}"
 kubectl patch configmap argocd-cmd-params-cm -n argocd --type merge -p '{"data":{"server.insecure":"true"}}'
+kubectl patch configmap argocd-cmd-params-cm -n argocd --type merge -p '{"data":{"server.enable.grpc.web":"true"}}'
 kubectl rollout restart deployment/argocd-server -n argocd
 
 echo "ArgoCD URL: http://$ALB_URL"

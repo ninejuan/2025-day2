@@ -34,31 +34,54 @@ resource "aws_cloudwatch_dashboard" "wsi_dashboard" {
         }
       },
       {
-  type   = "log"
+  type   = "metric"
   x      = 0
   y      = 6
   width  = 12
   height = 6
 
   properties = {
-    query   = <<EOT
-SOURCE '/ecs/${var.name_prefix}-app'
-| fields @timestamp, @message
-| sort @timestamp desc
-| limit 100
-| parse @message /(?<raw_date>\S+) (?<raw_time>\S+) (?<src_ip>\S+) (?<dst_ip>\S+) (?<method>\S+) (?<path>\S+) (?<status>\S+) (?<bytes_sent>\S+) (?<bytes_recv>\S+) (?<duration>\S+)/
-| stats 
-    sum(if(status >= 200 and status < 300, 1, 0)) * 100.0 / count(*)
-EOT
+    metrics = [
+      [
+        {
+          expression = "100 * m2xx / total"
+          label      = "SLI Success Rate"
+          id         = "e1"
+          region     = "ap-southeast-1"
+        }
+      ],
+      [
+        "AWS/ApplicationELB", "RequestCount", "LoadBalancer", "${var.alb_full_name}",
+        {
+          id     = "total"
+          stat   = "Sum"
+          region = "ap-southeast-1"
+          visible = false
+        }
+      ],
+      [
+        ".", "HTTPCode_Target_2XX_Count", ".", ".",
+        {
+          id     = "m2xx"
+          stat   = "Sum"
+          region = "ap-southeast-1"
+          visible = false
+        }
+      ]
+    ]
     region  = "ap-southeast-1"
     title   = "wsi-SLI"
     view    = "gauge"
+    setPeriodToTimeRange = true
+    stacked = false
     yAxis = {
       left = {
         min = 0
         max = 100
       }
     }
+    singleValueFullPrecision = false
+    liveData = true
   }
 }
 ,
