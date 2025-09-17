@@ -13,7 +13,7 @@ spec:
       valueFiles:
         - ../../values/prod.values.yaml
   destination:
-    server: https://BCF55A542709B8BD2E831536DA0FE472.yl4.eu-central-1.eks.amazonaws.com
+    server: https://8E161932BD5412D10F3A193E1C8AA3A6.gr7.eu-central-1.eks.amazonaws.com
     namespace: app
   syncPolicy:
     syncOptions:

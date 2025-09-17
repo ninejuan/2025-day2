@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: manual-runner-dev
+  name: manual-runner-prod-hello
   namespace: app
   labels:
     app: github-runner
-    environment: dev
+    environment: prod
 spec:
   containers:
   - name: runner
@@ -16,11 +16,11 @@ spec:
     - name: RUNNER_REPO
       value: "ninejuan/day2-product"
     - name: RUNNER_TOKEN
-      value: "AS3KYFB2NSKRWTKLIZQ74K3IYI24I"
+      value: "AS3KYFBWKCVTRMX2T2TTCWTIZIPFK"
     - name: RUNNER_NAME
-      value: "manual-dev-runner"
+      value: "prod-runner-1jdjf-84mks"
     - name: RUNNER_LABELS
-      value: "dev,self-hosted,Linux,X64"
+      value: "prod,self-hosted,Linux,X64"
     - name: RUNNER_WORKDIR
       value: "/runner/_work"
     resources:

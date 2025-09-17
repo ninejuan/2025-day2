@@ -92,18 +92,53 @@ install_argocd_dev() {
 }
 
 register_prod_cluster_with_argocd() {
+  echo "[INFO] Creating ArgoCD ServiceAccount in prod cluster..."
+
+  aws eks update-kubeconfig --region eu-central-1 --name prod-cluster >/dev/null
+  
+  cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-manager
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argocd-manager-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: argocd-manager
+  namespace: kube-system
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argocd-manager-token
+  namespace: kube-system
+  annotations:
+    kubernetes.io/service-account.name: argocd-manager
+type: kubernetes.io/service-account-token
+EOF
+
+  echo "[INFO] Waiting for ServiceAccount token..."
+  sleep 5
+    
   local PROD_ENDPOINT
-  PROD_ENDPOINT=$(aws eks describe-cluster --name "${PROD_CLUSTER}" --region "${REGION}" --query 'cluster.endpoint' --output text)
+  PROD_ENDPOINT=$(aws eks describe-cluster --name prod-cluster --region eu-central-1 --query 'cluster.endpoint' --output text)
   
   local PROD_CA
-  PROD_CA=$(aws eks describe-cluster --name "${PROD_CLUSTER}" --region "${REGION}" --query 'cluster.certificateAuthority.data' --output text)
+  PROD_CA=$(aws eks describe-cluster --name prod-cluster --region eu-central-1 --query 'cluster.certificateAuthority.data' --output text)
   
-  kubectl create secret generic prod-cluster-secret \
-    --from-literal=name="${PROD_CLUSTER}" \
-    --from-literal=server="${PROD_ENDPOINT}" \
-    --from-literal=config="{\"tlsClientConfig\":{\"insecure\":false,\"caData\":\"${PROD_CA}\"}}" \
-    -n argocd \
-    --dry-run=client -o yaml | kubectl apply -f -
+  local SA_TOKEN
+  SA_TOKEN=$(kubectl get secret argocd-manager-token -n kube-system -o jsonpath='{.data.token}' | base64 -d)
+  
+  aws eks update-kubeconfig --region eu-central-1 --name dev-cluster >/dev/null
   
   cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -115,18 +150,19 @@ metadata:
     argocd.argoproj.io/secret-type: cluster
 type: Opaque
 stringData:
-  name: ${PROD_CLUSTER}
+  name: prod-cluster
   server: ${PROD_ENDPOINT}
   config: |
     {
+      "bearerToken": "${SA_TOKEN}",
       "tlsClientConfig": {
         "insecure": false,
         "caData": "${PROD_CA}"
       }
     }
 EOF
-  
-  echo "[INFO] Prod cluster registered with ArgoCD"
+
+  echo "[INFO] Prod cluster registered with ArgoCD using ServiceAccount token"
 }
 
 install_rollouts() {

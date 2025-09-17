@@ -8,7 +8,7 @@
 또한, 사용하는 토큰은 `ghp_`로 시작하는 Classic 토큰을 사용하여야 합니다. 권한은 전체 권한 부여하는 것이 편합니다.  
 Token renew 명령어를 통해 발급된 Runner token을 `manual-<env>.yaml`의 RUNNER_TOKEN의 value로 사용합니다.
 <br />
-<Provisioning>
+<프로비저닝>
 - GITHUB_TOKEN : Github Classic Token을 사용하시기 바랍니다. 가능하면 권한은 전체 권한을 부여하는 것이 좋습니다.
 - RUNNER_REPO : <username>/<reponame> 형식으로 작성합니다. skills-user/day2-product와 같은 형태로 작성합니다.
 - RUNNER_TOKEN : 아래 Token renew 명령어를 통해 나온 값을 사용합니다. 이 값은 재사용될 수 없고, Runner를 등록할 때마다 서로 다른 값을 사용해야 합니다. 
