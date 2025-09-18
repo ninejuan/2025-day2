@@ -1,0 +1,119 @@
+name: dev GA
+
+on:
+  pull_request:
+    branches: [dev]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+  actions: read
+
+env:
+  ECR_REPOSITORY: product/dev
+  DOCKERFILE_PATH: ./Dockerfile
+  VALUES_FILE: values/dev.values.yaml
+  DOCKER_HOST: tcp://localhost:2375
+
+jobs:
+  auto-merge-and-deploy:
+    runs-on: [self-hosted, dev]
+    timeout-minutes: 2
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install GitHub CLI
+        run: |
+          curl -fsSL https://github.com/cli/cli/releases/download/v2.40.1/gh_2.40.1_linux_amd64.tar.gz | tar -xz
+          sudo mv gh_2.40.1_linux_amd64/bin/gh /usr/local/bin/
+
+      - name: Auto merge PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git fetch origin ${{ github.event.pull_request.head.ref }}
+          gh pr merge ${{ github.event.pull_request.number }} --merge --auto --delete-branch
+
+      - name: Checkout dev branch after merge
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64
+          driver: docker-container
+          install: true
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHubActions-Dev
+          aws-region: eu-central-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Get commit SHA
+        id: commit
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ steps.commit.outputs.sha }}
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --file $DOCKERFILE_PATH \
+            --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            --push \
+            .
+
+      - name: Update image tag in values file
+        env:
+          IMAGE_TAG: ${{ steps.commit.outputs.sha }}
+        run: |
+          sed -i "s|tag: .*|tag: ${IMAGE_TAG}|" values/dev.values.yaml
+          git add values/dev.values.yaml
+          git commit -m "Update dev image tag to ${IMAGE_TAG}"
+          git push origin dev
+
+      - name: Sync ArgoCD Application
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer $ARGOCD_TOKEN" \
+            -H "Content-Type: application/json" \
+            "$ARGOCD_SERVER/api/v1/applications/dev/sync" \
+            -d '{"prune": false, "dryRun": false, "strategy": {"hook": {}}}'
+
+      - name: Comment on PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            gh pr comment ${{ github.event.number }} --body "success. dev Image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.commit.outputs.sha }}"
+          else
+            gh pr comment ${{ github.event.number }} --body "failed."
+          fi

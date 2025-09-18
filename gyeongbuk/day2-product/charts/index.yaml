@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  app:
+  - apiVersion: v2
+    appVersion: "1.0"
+    created: "2025-09-18T10:48:07.107662+09:00"
+    description: WorldSkills Korea 2025 Cloud Computing Day2 Product App
+    digest: 636f64ad1621a25e5e1d4d37f5e3bf0f4a6a7f5fcc078d7c0cb93a2caf4e6a78
+    name: app
+    type: application
+    urls:
+    - https://ninejuan.github.io/day2-product/charts/app-1.0.2.tgz
+    version: 1.0.2
+generated: "2025-09-18T10:48:07.10706+09:00"
