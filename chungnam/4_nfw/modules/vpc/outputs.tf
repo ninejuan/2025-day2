@@ -38,9 +38,9 @@ output "nat_gateway_ids" {
   value       = aws_nat_gateway.this[*].id
 }
 
-output "public_route_table_id" {
-  description = "ID of the public route table"
-  value       = length(aws_route_table.public) > 0 ? aws_route_table.public[0].id : null
+output "public_route_table_ids" {
+  description = "IDs of the public route tables"
+  value       = aws_route_table.public[*].id
 }
 
 output "peering_route_table_ids" {

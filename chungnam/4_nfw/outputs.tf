@@ -18,7 +18,13 @@ output "bastion_instance_id" {
   value       = module.bastion.instance_id
 }
 
-output "vpc_peering_connection_id" {
-  description = "ID of the VPC peering connection"
-  value       = aws_vpc_peering_connection.app_to_egress.id
+output "transit_gateway_id" {
+  description = "ID of the Transit Gateway"
+  value       = aws_ec2_transit_gateway.main.id
 }
+
+# 기존 Peering 관련 출력은 주석 처리
+# output "vpc_peering_connection_id" {
+#   description = "ID of the VPC peering connection"
+#   value       = aws_vpc_peering_connection.app_to_egress.id
+# }

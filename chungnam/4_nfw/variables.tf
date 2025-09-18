@@ -16,7 +16,6 @@ variable "key_pair_name" {
   default     = "nfw-key"
 }
 
-# VPC CIDR blocks
 variable "egress_vpc_cidr" {
   description = "CIDR block for Egress VPC"
   type        = string
@@ -29,7 +28,6 @@ variable "app_vpc_cidr" {
   default     = "172.16.0.0/16"
 }
 
-# Subnet CIDR blocks - Egress VPC
 variable "egress_public_subnets" {
   description = "CIDR blocks for Egress VPC public subnets"
   type        = list(string)
@@ -48,7 +46,6 @@ variable "egress_firewall_subnets" {
   default     = ["10.0.4.0/24", "10.0.5.0/24"]
 }
 
-# Subnet CIDR blocks - App VPC
 variable "app_private_subnets" {
   description = "CIDR blocks for App VPC private subnets"
   type        = list(string)

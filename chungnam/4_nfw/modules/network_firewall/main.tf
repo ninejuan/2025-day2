@@ -1,4 +1,4 @@
-# Stateless Rule Group - Block ICMP
+
 resource "aws_networkfirewall_rule_group" "stateless_icmp_block" {
   capacity = 100
   name     = "${var.firewall_name}-stateless-icmp-block"
@@ -12,7 +12,7 @@ resource "aws_networkfirewall_rule_group" "stateless_icmp_block" {
           rule_definition {
             actions = ["aws:drop"]
             match_attributes {
-              protocols = [1] # ICMP protocol number
+              protocols = [1]
               source {
                 address_definition = "0.0.0.0/0"
               }
@@ -31,7 +31,6 @@ resource "aws_networkfirewall_rule_group" "stateless_icmp_block" {
   }
 }
 
-# Stateful Rule Group - Block DNS and specific domains
 resource "aws_networkfirewall_rule_group" "stateful_dns_block" {
   capacity = 1000
   name     = "${var.firewall_name}-stateful-dns-block"
@@ -49,14 +48,16 @@ resource "aws_networkfirewall_rule_group" "stateful_dns_block" {
 
     rules_source {
       rules_string = <<-EOT
-        # Block all external DNS queries (UDP and TCP port 53)
         drop udp $HOME_NET any -> !$HOME_NET 53 (msg:"Block external DNS UDP"; sid:1; rev:1;)
         drop tcp $HOME_NET any -> !$HOME_NET 53 (msg:"Block external DNS TCP"; sid:2; rev:1;)
         
-        # Block specific DNS over HTTPS providers
         drop tls $HOME_NET any -> !$HOME_NET 443 (tls.sni; content:"1.1.1.1"; msg:"Block DoH Cloudflare"; sid:3; rev:1;)
         drop tls $HOME_NET any -> !$HOME_NET 443 (tls.sni; content:"8.8.8.8"; msg:"Block DoH Google"; sid:4; rev:1;)
         drop tls $HOME_NET any -> !$HOME_NET 443 (tls.sni; content:"dns.quad9.net"; msg:"Block DoH Quad9"; sid:5; rev:1;)
+
+        # 기본 HTTPS/HTTP 아웃바운드 허용 (위 drop 규칙에 매칭되지 않는 경우)
+        pass tcp $HOME_NET any -> !$HOME_NET 443 (msg:"Allow HTTPS egress"; sid:1001; rev:1;)
+        pass tcp $HOME_NET any -> !$HOME_NET 80 (msg:"Allow HTTP egress"; sid:1002; rev:1;)
       EOT
     }
 
@@ -70,12 +71,10 @@ resource "aws_networkfirewall_rule_group" "stateful_dns_block" {
   }
 }
 
-# Firewall Policy
 resource "aws_networkfirewall_firewall_policy" "this" {
   name = "${var.firewall_name}-policy"
 
   firewall_policy {
-    # Stateless rule groups
     stateless_default_actions          = ["aws:forward_to_sfe"]
     stateless_fragment_default_actions = ["aws:forward_to_sfe"]
 
@@ -84,8 +83,9 @@ resource "aws_networkfirewall_firewall_policy" "this" {
       resource_arn = aws_networkfirewall_rule_group.stateless_icmp_block.arn
     }
 
-    # Stateful rule groups - Allow by default, only block what's explicitly dropped
-    stateful_default_actions = ["aws:alert_established"]
+    # 기본 동작: 엄격 모드에서 경고(통과). 유효한 값만 사용
+    # stateful_default_actions = ["aws:alert_established"]
+    stateful_default_actions = ["aws:alert_strict"]
 
     stateful_rule_group_reference {
       priority     = 1
@@ -102,7 +102,6 @@ resource "aws_networkfirewall_firewall_policy" "this" {
   }
 }
 
-# Network Firewall
 resource "aws_networkfirewall_firewall" "this" {
   name               = var.firewall_name
   firewall_policy_arn = aws_networkfirewall_firewall_policy.this.arn
@@ -120,7 +119,6 @@ resource "aws_networkfirewall_firewall" "this" {
   }
 }
 
-# Logging Configuration
 resource "aws_cloudwatch_log_group" "firewall_logs" {
   name              = "/aws/networkfirewall/${var.firewall_name}"
   retention_in_days = 7
