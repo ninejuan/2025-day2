@@ -1,5 +1,8 @@
 # GitHub 설정 가이드 (day2-product)
 
+## 0) 반영 전 체크리스트
+- [ ] 하드코딩된 Github ID를 모두 대회장 계정 정보로 변경했는가? (주의!)
+
 ## 1) 저장소 생성 및 초기 구조
 - Public Repository 생성: `day2-product`
 - 기본 브랜치: `dev` (초기 main 생성 후 `dev`, `prod` 브랜치 추가, 기본 브랜치를 dev로 변경)
@@ -17,7 +20,7 @@
   - FF merge -> ECR push(tag=commit SHA) -> values/prod 업데이트 -> ArgoCD sync(prod)
 
 ## 3) 라벨
-- `approval`: prod 배포 승인용 라벨
+- `approval`: prod 배포 승인용 라벨 (Color #008fff 권장)
 
 ## 4) GitHub Secrets (Repo-level)
 - `AWS_ROLE_ARN`: Terraform 출력값 `github_actions_role_arn`
@@ -41,14 +44,19 @@
   - 트리거: PR to prod (labeled) w. `approval`
   - 동작: FF merge dev->prod -> buildx -> ECR push -> values/prod 갱신 -> ArgoCD sync(prod)
 
-## 8) 점검 명령어
-- 러너 확인
-```bash
-GITHUB_USER=<your_user>
-gh api repos/"$GITHUB_USER"/day2-product/actions/runners --paginate --jq '.runners[] | select(any(.labels[].name; . == "dev" or . == "prod")) | "\(.name)\t\([.labels[].name] | join(","))"'
-```
-- 클러스터 내 확인
-```bash
-kubectl get po -n app --output name | grep product
-kubectl get runner -n app --output name
+## 8) 마지막 체크리스트
+- [ ] Dev, Prod VPC에 Subnet이 4개인가?
+- [ ] 스크립트 1의 출력 결과가 Private인가?
+- [ ] (dev cluster) Product pod, Runner가 각각 2개씩 운영중인가?
+- [ ] Helm chart로 gh pages를 참조하고 있는가?
+- [ ] 계정에 다른 Repo가 없고, 기본 브랜치가 dev인가?
+
+## 9) 스크립트 1
+```sh
+for c in dev-cluster prod-cluster; do
+  subnets=($(aws eks describe-cluster --name $c --query "cluster.resourcesVpcConfig.subnetIds[]" --out text))
+  for s in "${subnets[@]}"; do
+    [[ $(aws ec2 describe-subnets --subnet-ids $s --q "Subnets[0].MapPublicIpOnLaunch" --out text) == "True" ]] && echo "Public" && break
+  done || echo "Private"
+done
 ```
