@@ -60,6 +60,7 @@ resource "aws_s3_object" "masked_folder" {
   }
 }
 
+
 resource "aws_s3_object" "provided_files" {
   for_each = fileset("${path.root}/provided_files/", "*.txt")
 

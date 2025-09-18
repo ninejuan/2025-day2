@@ -20,3 +20,4 @@ module "macie" {
   job_name    = var.macie_job_name
   bucket_name = module.s3.bucket_name
 }
+
