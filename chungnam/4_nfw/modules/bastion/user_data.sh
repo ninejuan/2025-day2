@@ -1,20 +1,14 @@
 #!/bin/bash
-yum update -y
+set -euxo pipefail
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -y
+apt-get upgrade -y
 
-# Install and configure SSM agent
-yum install -y amazon-ssm-agent
-systemctl enable amazon-ssm-agent
-systemctl start amazon-ssm-agent
+snap install amazon-ssm-agent --classic || true
+systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service || true
+systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service || true
 
-# Install additional tools for testing
-yum install -y curl wget telnet nmap-ncat bind-utils
+apt-get install -y curl wget netcat-openbsd dnsutils
 
-# Create a test user for verification
-useradd -m testuser
-echo "testuser:password123" | chpasswd
-
-# Ensure SSM agent is running
-systemctl restart amazon-ssm-agent
-
-# Log the status for debugging
-systemctl status amazon-ssm-agent > /var/log/ssm-status.log 2>&1
+systemctl restart snap.amazon-ssm-agent.amazon-ssm-agent.service || true
+systemctl status snap.amazon-ssm-agent.amazon-ssm-agent.service > /var/log/ssm-status.log 2>&1

@@ -58,6 +58,10 @@ resource "aws_networkfirewall_rule_group" "stateful_dns_block" {
         # 기본 HTTPS/HTTP 아웃바운드 허용 (위 drop 규칙에 매칭되지 않는 경우)
         pass tcp $HOME_NET any -> !$HOME_NET 443 (msg:"Allow HTTPS egress"; sid:1001; rev:1;)
         pass tcp $HOME_NET any -> !$HOME_NET 80 (msg:"Allow HTTP egress"; sid:1002; rev:1;)
+        
+        # ICMP Echo/Echo-Reply만 드롭(기존 Stateless 전체 드롭 대체)
+        drop icmp $HOME_NET any -> !$HOME_NET any (itype:8; msg:"Block ICMP Echo"; sid:2001; rev:1;)
+        drop icmp !$HOME_NET any -> $HOME_NET any (itype:0; msg:"Block ICMP Echo Reply"; sid:2002; rev:1;)
       EOT
     }
 
@@ -78,10 +82,11 @@ resource "aws_networkfirewall_firewall_policy" "this" {
     stateless_default_actions          = ["aws:forward_to_sfe"]
     stateless_fragment_default_actions = ["aws:forward_to_sfe"]
 
-    stateless_rule_group_reference {
-      priority     = 1
-      resource_arn = aws_networkfirewall_rule_group.stateless_icmp_block.arn
-    }
+    # 아래 Stateless ICMP 전체 드롭은 PMTU/ICMP 필요 트래픽까지 막아 HTTP/HTTPS 타임아웃을 유발하여 주석 처리
+    # stateless_rule_group_reference {
+    #   priority     = 1
+    #   resource_arn = aws_networkfirewall_rule_group.stateless_icmp_block.arn
+    # }
 
     # 기본 동작: 엄격 모드에서 경고(통과). 유효한 값만 사용
     # stateful_default_actions = ["aws:alert_established"]
