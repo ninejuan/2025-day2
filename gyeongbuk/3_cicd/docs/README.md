@@ -1,5 +1,7 @@
 # Day2 CI/CD (gyongbuk/3_cicd)
-
+---
+- main, prod, dev branch가 필요
+- day2-product를 marking_product로 bastion에 넣어둬야 함. (매우 중요!)
 ## 개요
 - VPC 2개(dev/prod), EKS 2개, Bastion, ECR 2개(product/dev, product/prod)
 - ArgoCD(dev 전용), Argo Rollouts(dev/prod), ARC(Self-hosted Runner), ALB Controller
