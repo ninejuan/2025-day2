@@ -4,6 +4,7 @@ set -euo pipefail
 ### --------------------------------------------------------------------------------
 ### 해당 스크립트를 실행하기 전, 아래 체크리스트를 모두 완료하기 바랍니다.
 ### 1. argocd prod application의 destination server를 prod-cluster의 주소로 변경해주세요.
+### 2. argocd dev/prod Application Helm chart source의 Github ID가 올바른지 확인해주세요.
 ### --------------------------------------------------------------------------------
 
 # This script installs cluster add-ons and resources without Terraform Helm:

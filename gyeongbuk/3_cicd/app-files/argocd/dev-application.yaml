@@ -5,13 +5,16 @@ metadata:
   namespace: argocd
 spec:
   project: default
-  source:
-    repoURL: https://github.com/ninejuan/day2-product.git
-    path: charts/app
-    targetRevision: dev
-    helm:
-      valueFiles:
-        - ../../values/dev.values.yaml
+  sources:
+    - repoURL: https://ninejuan.github.io/day2-product/charts
+      chart: app
+      targetRevision: 1.0.1
+      helm:
+        valueFiles:
+          - $values/values/dev.values.yaml
+    - repoURL: https://github.com/ninejuan/day2-product.git
+      targetRevision: dev
+      ref: values
   destination:
     server: https://kubernetes.default.svc
     namespace: app
