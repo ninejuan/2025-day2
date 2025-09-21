@@ -89,7 +89,6 @@ resource "aws_s3_object" "us_file" {
   tags = var.tags
 }
 
-# Prefixed copies for path-based routing
 resource "aws_s3_object" "kr_prefixed" {
   count = var.region == "ap-northeast-2" ? 1 : 0
 

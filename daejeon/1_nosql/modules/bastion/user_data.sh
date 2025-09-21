@@ -1,25 +1,19 @@
 #!/bin/bash
 
-# Update system
 yum update -y
 
-# Install Python 3 and pip
 yum install -y python3 python3-pip git
 
-# Install AWS CLI v2
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 unzip awscliv2.zip
 ./aws/install
 rm -rf aws awscliv2.zip
 
-# Install boto3 for testing
 pip3 install boto3
 
-# Create test directory
 mkdir -p /opt/dynamodb-test
 cd /opt/dynamodb-test
 
-# Create a simple test script
 cat > test_dynamodb.py << 'EOF'
 import boto3
 import json
@@ -29,14 +23,12 @@ from datetime import datetime
 def test_dynamodb():
     """Test DynamoDB operations"""
     try:
-        # Initialize DynamoDB client
         dynamodb = boto3.resource('dynamodb', region_name='${table_region}')
         table_name = '${table_name}'
         table = dynamodb.Table(table_name)
         
         print(f"Testing DynamoDB table: {table_name}")
         
-        # Test creating an account
         account_id = "test-account"
         current_time = datetime.utcnow().isoformat() + 'Z'
         
@@ -48,18 +40,15 @@ def test_dynamodb():
             'last_updated': current_time
         }
         
-        # Put item
         table.put_item(Item=item)
         print(f"✓ Created test account: {account_id}")
         
-        # Get item
         response = table.get_item(Key={'account_id': account_id})
         if 'Item' in response:
             print(f"✓ Retrieved account: {response['Item']}")
         else:
             print("✗ Failed to retrieve account")
             
-        # Clean up - delete test account
         table.delete_item(Key={'account_id': account_id})
         print(f"✓ Deleted test account: {account_id}")
         
@@ -72,7 +61,6 @@ if __name__ == "__main__":
     test_dynamodb()
 EOF
 
-# Create a simple API test script
 cat > test_api.py << 'EOF'
 import requests
 import json
@@ -81,11 +69,9 @@ import time
 def test_api():
     """Test the account API"""
     try:
-        # Wait for the service to be ready
         print("Waiting for API service to be ready...")
         time.sleep(30)
         
-        # Test health check
         try:
             response = requests.get('http://localhost:8080/healthcheck', timeout=10)
             if response.status_code == 200:
@@ -95,7 +81,6 @@ def test_api():
         except Exception as e:
             print(f"✗ Health check error: {str(e)}")
         
-        # Test create account
         try:
             create_data = {
                 "account_id": "test-api-account",
@@ -120,10 +105,8 @@ if __name__ == "__main__":
     test_api()
 EOF
 
-# Install requests for API testing
 pip3 install requests
 
-# Create a monitoring script
 cat > monitor.sh << 'EOF'
 #!/bin/bash
 
@@ -162,7 +145,6 @@ EOF
 
 chmod +x monitor.sh
 
-# Create a simple status page
 cat > /var/www/html/index.html << 'EOF'
 <!DOCTYPE html>
 <html>
@@ -205,10 +187,8 @@ cat > /var/www/html/index.html << 'EOF'
 </html>
 EOF
 
-# Install Apache for status page
 yum install -y httpd
 systemctl enable httpd
 systemctl start httpd
 
-# Log completion
 echo "Bastion setup completed at $(date)" >> /var/log/bastion-setup.log

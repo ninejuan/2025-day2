@@ -2,7 +2,6 @@
 yum update -y
 yum install -y python3 python3-pip docker git amazon-ssm-agent
 
-# SSM Agent 시작 및 활성화
 systemctl start amazon-ssm-agent
 systemctl enable amazon-ssm-agent
 

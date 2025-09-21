@@ -8,7 +8,6 @@ resource "aws_vpc" "this" {
   }
 }
 
-# Internet Gateway (only for Egress VPC)
 resource "aws_internet_gateway" "this" {
   count  = var.create_igw ? 1 : 0
   vpc_id = aws_vpc.this.id
@@ -18,7 +17,6 @@ resource "aws_internet_gateway" "this" {
   }
 }
 
-# Public Subnets
 resource "aws_subnet" "public" {
   count                   = length(var.public_subnets)
   vpc_id                  = aws_vpc.this.id
@@ -31,7 +29,6 @@ resource "aws_subnet" "public" {
   }
 }
 
-# Peering Subnets (only for Egress VPC)
 resource "aws_subnet" "peering" {
   count             = length(var.peering_subnets)
   vpc_id            = aws_vpc.this.id
@@ -43,7 +40,6 @@ resource "aws_subnet" "peering" {
   }
 }
 
-# Firewall Subnets (only for Egress VPC)
 resource "aws_subnet" "firewall" {
   count             = length(var.firewall_subnets)
   vpc_id            = aws_vpc.this.id
@@ -55,7 +51,6 @@ resource "aws_subnet" "firewall" {
   }
 }
 
-# Private Subnets (only for App VPC)
 resource "aws_subnet" "private" {
   count             = length(var.private_subnets)
   vpc_id            = aws_vpc.this.id
@@ -67,7 +62,6 @@ resource "aws_subnet" "private" {
   }
 }
 
-# NAT Gateways (only for Egress VPC)
 resource "aws_eip" "nat" {
   count  = var.create_nat_gw ? length(var.public_subnets) : 0
   domain = "vpc"
@@ -91,7 +85,6 @@ resource "aws_nat_gateway" "this" {
   depends_on = [aws_internet_gateway.this]
 }
 
-# Route Tables - Public
 resource "aws_route_table" "public" {
   count  = var.create_igw ? length(aws_subnet.public) : 0
   vpc_id = aws_vpc.this.id
@@ -112,7 +105,6 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public[count.index].id
 }
 
-# Route Tables - Peering (for Egress VPC)
 resource "aws_route_table" "peering" {
   count  = length(var.peering_subnets) > 0 ? length(var.peering_subnets) : 0
   vpc_id = aws_vpc.this.id
@@ -128,7 +120,6 @@ resource "aws_route_table_association" "peering" {
   route_table_id = aws_route_table.peering[count.index].id
 }
 
-# Route Tables - Firewall (for Egress VPC)
 resource "aws_route_table" "firewall" {
   count  = length(var.firewall_subnets) > 0 ? length(var.firewall_subnets) : 0
   vpc_id = aws_vpc.this.id
@@ -144,7 +135,6 @@ resource "aws_route_table_association" "firewall" {
   route_table_id = aws_route_table.firewall[count.index].id
 }
 
-# Route Tables - Private (for App VPC)
 resource "aws_route_table" "private" {
   count  = length(var.private_subnets) > 0 ? length(var.private_subnets) : 0
   vpc_id = aws_vpc.this.id

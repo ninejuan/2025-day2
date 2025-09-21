@@ -5,7 +5,6 @@ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stabl
 chmod +x kubectl
 mv kubectl /usr/local/bin/
 
-# Install GitHub CLI on Amazon Linux 2
 type gh >/dev/null 2>&1 || {
   rpm -qi gh >/dev/null 2>&1 || {
     curl -fsSL https://cli.github.com/packages/rpm/gh-cli.repo -o /etc/yum.repos.d/gh-cli.repo

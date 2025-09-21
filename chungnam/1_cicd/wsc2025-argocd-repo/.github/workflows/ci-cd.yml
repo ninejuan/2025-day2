@@ -57,7 +57,6 @@ jobs:
         ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
         VERSION: ${{ steps.version.outputs.VERSION }}
       run: |
-        # Update the image in deploy.yaml with the full ECR path and version
         sed -i "s|image: .*|image: $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION|g" manifest/deploy.yaml
         echo "Updated deploy.yaml with new image: $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION"
 
