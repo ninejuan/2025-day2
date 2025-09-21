@@ -7,6 +7,7 @@ resource "random_string" "bucket_suffix" {
 
 resource "aws_s3_bucket" "sensitive_data" {
   bucket = "${var.bucket_prefix}-${random_string.bucket_suffix.result}"
+  force_destroy = true
 
   tags = {
     Name        = "${var.bucket_prefix}-${random_string.bucket_suffix.result}"

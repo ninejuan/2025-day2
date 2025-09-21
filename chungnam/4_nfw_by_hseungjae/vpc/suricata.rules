@@ -1,0 +1,3 @@
+drop tcp any any -> any 53 (sid: 1;)
+drop udp any any -> any 53 (sid: 2;)
+drop ip any any -> any any (tls.sni; content: "."; endswith; sid: 3;)

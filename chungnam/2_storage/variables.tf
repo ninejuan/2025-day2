@@ -17,3 +17,9 @@ variable "macie_job_name" {
   type    = string
   default = "wsc2025-sensor-job"
 }
+
+variable "macie_enable" {
+  type        = bool
+  description = "Enable Macie account via Terraform. Set false if already enabled (e.g., training account)."
+  default     = true
+}

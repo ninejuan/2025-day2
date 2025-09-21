@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 module "lambda" {
   source = "./modules/lambda"
 
@@ -17,7 +19,9 @@ module "s3" {
 module "macie" {
   source = "./modules/macie"
 
-  job_name    = var.macie_job_name
+  prefix      = "wsc2025"
   bucket_name = module.s3.bucket_name
+  account_id  = data.aws_caller_identity.current.account_id
+  enable_macie = var.macie_enable
 }
 

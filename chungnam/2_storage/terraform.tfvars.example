@@ -2,3 +2,4 @@ region                = "ap-northeast-2"
 bucket_prefix         = "wsc2025-sensitive"
 lambda_function_name  = "wsc2025-masking-start"
 macie_job_name        = "wsc2025-sensor-job"
+macie_enable          = true
