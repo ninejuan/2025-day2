@@ -77,6 +77,11 @@ resource "aws_cloudfront_distribution" "main" {
     cache_policy_id          = aws_cloudfront_cache_policy.main.id
     origin_request_policy_id = aws_cloudfront_origin_request_policy.main.id
     response_headers_policy_id = aws_cloudfront_response_headers_policy.main.id
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.main.arn
+    }
   }
 
   ordered_cache_behavior {
@@ -89,6 +94,11 @@ resource "aws_cloudfront_distribution" "main" {
     cache_policy_id          = aws_cloudfront_cache_policy.main.id
     origin_request_policy_id = aws_cloudfront_origin_request_policy.main.id
     response_headers_policy_id = aws_cloudfront_response_headers_policy.main.id
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.main.arn
+    }
   }
   origin {
     domain_name = var.kr_bucket_domain

@@ -135,3 +135,16 @@ resource "aws_key_pair" "s3cdn_key" {
   
   tags = local.common_tags
 }
+
+resource "aws_lambda_function" "skills_cdn_edge_funcion" {
+  provider         = aws.us
+  function_name    = "skills-cdn-edge-funcion"
+  role             = module.lambda_us.role_arn
+  handler          = "index.handler"
+  runtime          = "python3.11"
+  filename         = "${path.module}/modules/lambda/lambda_function.zip"
+  source_code_hash = filebase64sha256("${path.module}/modules/lambda/lambda_function.zip")
+  timeout          = 10
+
+  tags = local.common_tags
+}

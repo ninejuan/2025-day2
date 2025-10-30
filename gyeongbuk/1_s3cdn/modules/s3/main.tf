@@ -1,6 +1,7 @@
 resource "aws_s3_bucket" "main" {
   bucket = var.bucket_name
 
+  force_destroy = true
   tags = var.tags
 }
 
@@ -89,26 +90,26 @@ resource "aws_s3_object" "us_file" {
   tags = var.tags
 }
 
-resource "aws_s3_object" "kr_prefixed" {
-  count = var.region == "ap-northeast-2" ? 1 : 0
+# resource "aws_s3_object" "kr_prefixed" {
+#   count = var.region == "ap-northeast-2" ? 1 : 0
 
-  bucket = aws_s3_bucket.main.id
-  key    = "kr/index.html"
-  source = "${path.root}/provided_files/kr/index.html"
-  etag   = filemd5("${path.root}/provided_files/kr/index.html")
-  content_type = "text/html"
+#   bucket = aws_s3_bucket.main.id
+#   key    = "kr/index.html"
+#   source = "${path.root}/provided_files/kr/index.html"
+#   etag   = filemd5("${path.root}/provided_files/kr/index.html")
+#   content_type = "text/html"
 
-  tags = var.tags
-}
+#   tags = var.tags
+# }
 
-resource "aws_s3_object" "us_prefixed" {
-  count = var.region == "us-east-1" ? 1 : 0
+# resource "aws_s3_object" "us_prefixed" {
+#   count = var.region == "us-east-1" ? 1 : 0
 
-  bucket = aws_s3_bucket.main.id
-  key    = "us/index.html"
-  source = "${path.root}/provided_files/us/index.html"
-  etag   = filemd5("${path.root}/provided_files/us/index.html")
-  content_type = "text/html"
+#   bucket = aws_s3_bucket.main.id
+#   key    = "us/index.html"
+#   source = "${path.root}/provided_files/us/index.html"
+#   etag   = filemd5("${path.root}/provided_files/us/index.html")
+#   content_type = "text/html"
 
-  tags = var.tags
-}
+#   tags = var.tags
+# }

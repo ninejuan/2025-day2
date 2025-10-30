@@ -19,6 +19,11 @@ function handler(event) {
             }
         };
     }
+
+    if (request.uri && (request.uri.startsWith('/kr/') || request.uri.startsWith('/us/'))) {
+        request.uri = request.uri.replace(/^\/(kr|us)\//, '/');
+        return request;
+    }
     
     var blockedPatterns = ['bot', 'crawler', 'spider'];
     for (var i = 0; i < blockedPatterns.length; i++) {

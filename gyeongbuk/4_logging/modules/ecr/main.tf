@@ -6,6 +6,7 @@ resource "aws_ecr_repository" "app" {
     scan_on_push = true
   }
 
+  force_delete = true
   tags = {
     Name = "skills-app"
   }
@@ -19,6 +20,7 @@ resource "aws_ecr_repository" "firelens" {
     scan_on_push = true
   }
 
+  force_delete = true
   tags = {
     Name = "skills-firelens"
   }
